@@ -96,8 +96,16 @@ export function useWebGLShader({ fragmentShader, active = true, onCompileError }
   }, [compileShaderSource]);
 
   const setupProgram = useCallback(() => {
-    // Skip if same shader already compiled
-    if (lastShaderRef.current === fragmentShader && programRef.current && glRef.current && !glRef.current.isContextLost()) {
+    // If context was lost, reset refs so we rebuild everything
+    if (glRef.current && glRef.current.isContextLost()) {
+      glRef.current = null;
+      programRef.current = null;
+      bufferRef.current = null;
+      lastShaderRef.current = '';
+    }
+
+    // Skip if same shader already compiled and context is healthy
+    if (lastShaderRef.current === fragmentShader && programRef.current && glRef.current) {
       setReady(true);
       return;
     }
