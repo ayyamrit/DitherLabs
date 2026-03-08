@@ -253,27 +253,47 @@ const Index = () => {
               ))}
             </div>
 
-            <div className="flex items-center justify-center gap-4 mt-10">
-              {hasPrev && (
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-10 flex-wrap">
                 <button
                   onClick={handlePrevPage}
-                  className="font-mono text-sm px-6 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
+                  disabled={!hasPrev}
+                  className="font-mono text-sm px-4 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50 disabled:opacity-30 disabled:pointer-events-none"
                 >
-                  ← Previous
+                  ← Prev
                 </button>
-              )}
-              <span className="font-mono text-xs text-muted-foreground">
-                Page {currentPage + 1} of {totalPages}
-              </span>
-              {hasMore && (
+                {Array.from({ length: totalPages }, (_, i) => {
+                  const page = i;
+                  const show = page === 0 || page === totalPages - 1 || Math.abs(page - currentPage) <= 2;
+                  const showEllipsisBefore = page > 0 && !show && (i > 0 && (() => {
+                    const prevPage = i - 1;
+                    return prevPage === 0 || prevPage === totalPages - 1 || Math.abs(prevPage - currentPage) <= 2;
+                  })());
+                  if (!show && !showEllipsisBefore) return null;
+                  if (showEllipsisBefore) return <span key={`e${i}`} className="font-mono text-xs text-muted-foreground px-1">…</span>;
+                  return (
+                    <button
+                      key={i}
+                      onClick={() => { setCurrentPage(page); document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' }); }}
+                      className={`font-mono text-sm w-9 h-9 rounded-lg border transition-all ${
+                        page === currentPage
+                          ? 'border-primary bg-primary/20 text-primary font-bold'
+                          : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/40 bg-background/50'
+                      }`}
+                    >
+                      {page + 1}
+                    </button>
+                  );
+                })}
                 <button
                   onClick={handleNextPage}
-                  className="font-mono text-sm px-6 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
+                  disabled={!hasMore}
+                  className="font-mono text-sm px-4 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50 disabled:opacity-30 disabled:pointer-events-none"
                 >
                   Next →
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </section>
 
