@@ -77,8 +77,14 @@ const Index = () => {
     setPreviewShader(null);
   }, []);
 
-  const handleLoadMore = useCallback(() => {
-    setVisibleCount(prev => prev + ITEMS_PER_PAGE);
+  const handleNextPage = useCallback(() => {
+    setCurrentPage(prev => prev + 1);
+    document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  const handlePrevPage = useCallback(() => {
+    setCurrentPage(prev => Math.max(0, prev - 1));
+    document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   const nextBgShader = useCallback(() => {
