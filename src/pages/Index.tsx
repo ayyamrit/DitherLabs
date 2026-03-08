@@ -38,7 +38,7 @@ const Index = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [previewShader, setPreviewShader] = useState<DitherShaderDef | null>(null);
   const [showGuide, setShowGuide] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const [currentPage, setCurrentPage] = useState(0);
   const [bgShaderIndex, setBgShaderIndex] = useState(0);
 
   const bgShaders = useMemo(() =>
