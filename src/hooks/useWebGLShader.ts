@@ -185,9 +185,12 @@ export function useWebGLShader({ fragmentShader, active = true, onCompileError }
   }, [ensureCanvasSize]);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active) {
+      destroyGL(true);
+      return;
+    }
     setupProgram();
-  }, [active, fragmentShader, setupProgram]);
+  }, [active, fragmentShader, setupProgram, destroyGL]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
