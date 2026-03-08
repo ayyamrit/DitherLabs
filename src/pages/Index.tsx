@@ -1,13 +1,51 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import ShaderCard from '@/components/ShaderCard';
-import HeroShader from '@/components/HeroShader';
 import ShaderPreviewModal from '@/components/ShaderPreviewModal';
-import { ALL_SHADERS, FEATURED_SHADERS, type DitherShaderDef } from '@/shaders/ditherShaders';
+import UsageGuide from '@/components/UsageGuide';
+import { ALL_SHADERS, type DitherShaderDef } from '@/shaders/ditherShaders';
+
+// Derive categories from tags
+const CATEGORIES = [
+  { id: 'all', label: 'All' },
+  { id: '3d', label: '3D' },
+  { id: '2d', label: '2D Animated' },
+  { id: 'dither', label: 'Dither' },
+  { id: 'geometric', label: 'Geometric' },
+  { id: 'organic', label: 'Organic' },
+  { id: 'glitch', label: 'Glitch' },
+  { id: 'nature', label: 'Nature' },
+  { id: 'retro', label: 'Retro' },
+  { id: 'physics', label: 'Physics' },
+  { id: 'space', label: 'Space' },
+  { id: 'artistic', label: 'Artistic' },
+  { id: 'character', label: 'Characters' },
+  { id: 'mechanical', label: 'Mechanical' },
+  { id: 'landscape', label: 'Landscape' },
+  { id: 'psychedelic', label: 'Psychedelic' },
+];
+
+const ITEMS_PER_PAGE = 24;
 
 const Index = () => {
-  const [showAll, setShowAll] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('all');
   const [previewShader, setPreviewShader] = useState<DitherShaderDef | null>(null);
-  const displayedShaders = showAll ? ALL_SHADERS : FEATURED_SHADERS;
+  const [showGuide, setShowGuide] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+
+  const filteredShaders = useMemo(() => {
+    if (activeCategory === 'all') return ALL_SHADERS;
+    return ALL_SHADERS.filter(s =>
+      s.tags.some(t => t.toLowerCase().includes(activeCategory))
+    );
+  }, [activeCategory]);
+
+  const displayedShaders = filteredShaders.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredShaders.length;
+
+  const handleCategoryChange = (cat: string) => {
+    setActiveCategory(cat);
+    setVisibleCount(ITEMS_PER_PAGE);
+  };
 
   return (
     <div className="min-h-screen bg-background noise-bg">
@@ -20,7 +58,13 @@ const Index = () => {
               dither<span className="text-gradient-primary">lab</span>
             </span>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowGuide(!showGuide)}
+              className="font-mono text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
+            >
+              {showGuide ? 'Hide Guide' : 'Usage Guide'}
+            </button>
             <span className="section-label hidden sm:block">
               {ALL_SHADERS.length} shaders
             </span>
@@ -29,8 +73,13 @@ const Index = () => {
       </nav>
 
       {/* Hero */}
-      <section className="relative flex items-center justify-center min-h-[80vh] overflow-hidden pt-14">
-        <HeroShader />
+      <section className="relative flex items-center justify-center min-h-[60vh] overflow-hidden pt-14">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-accent/5 to-background" />
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 30% 40%, hsl(var(--primary) / 0.1) 0%, transparent 50%), radial-gradient(circle at 70% 60%, hsl(var(--accent) / 0.08) 0%, transparent 50%)`
+          }} />
+        </div>
         <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
           <p className="section-label mb-4">WebGL Shader Collection</p>
           <h1 className="font-display font-bold text-5xl sm:text-7xl md:text-8xl tracking-tight text-foreground mb-6 leading-[0.9]">
@@ -39,8 +88,7 @@ const Index = () => {
             <span className="text-gradient-primary">laboratory</span>
           </h1>
           <p className="font-display text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto mb-8 font-light">
-            A curated collection of interactive WebGL dithering shaders.
-            Hover to interact — click to preview fullscreen.
+            {ALL_SHADERS.length}+ interactive WebGL shaders — 2D animations, 3D raymarching, dithering algorithms & more. Hover to interact, click to preview.
           </p>
           <button
             onClick={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
@@ -52,21 +100,36 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Usage Guide (collapsible) */}
+      {showGuide && <UsageGuide />}
+
       {/* Gallery */}
       <section id="gallery" className="relative z-10 container py-20">
-        <div className="flex items-center justify-between mb-10">
-          <div>
-            <p className="section-label mb-2">Collection</p>
-            <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground">
-              {showAll ? 'All Shaders' : 'Featured'}
-            </h2>
+        <div className="mb-8">
+          <p className="section-label mb-2">Collection</p>
+          <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground mb-6">
+            {activeCategory === 'all' ? 'All Shaders' : CATEGORIES.find(c => c.id === activeCategory)?.label}
+            <span className="text-muted-foreground font-normal text-lg ml-3">
+              ({filteredShaders.length})
+            </span>
+          </h2>
+
+          {/* Category Filter */}
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => handleCategoryChange(cat.id)}
+                className={`font-mono text-xs px-3 py-1.5 rounded-full border transition-all ${
+                  activeCategory === cat.id
+                    ? 'border-primary bg-primary/15 text-primary'
+                    : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
           </div>
-          <button
-            onClick={() => setShowAll(!showAll)}
-            className="font-mono text-xs px-4 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
-          >
-            {showAll ? 'Show Featured' : `View All (${ALL_SHADERS.length})`}
-          </button>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -74,6 +137,17 @@ const Index = () => {
             <ShaderCard key={shader.id} shader={shader} onPreview={setPreviewShader} />
           ))}
         </div>
+
+        {hasMore && (
+          <div className="flex justify-center mt-10">
+            <button
+              onClick={() => setVisibleCount(prev => prev + ITEMS_PER_PAGE)}
+              className="font-mono text-sm px-8 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all"
+            >
+              Load More ({filteredShaders.length - visibleCount} remaining)
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Info Section */}
