@@ -1083,6 +1083,7 @@ export const ALL_SHADERS: DitherShaderDef[] = [
   ...shaderPack28,
   ...shaderPack29,
   ...shaderPack30,
+  ...shaderPackNightCity,
 ];
 
 export const FEATURED_SHADERS = ALL_SHADERS.filter(s => s.featured);
