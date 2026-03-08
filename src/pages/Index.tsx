@@ -4,7 +4,7 @@ import ShaderPreviewModal from '@/components/ShaderPreviewModal';
 import UsageGuide from '@/components/UsageGuide';
 import ShaderCanvas from '@/components/ShaderCanvas';
 import { ALL_SHADERS, FEATURED_SHADERS, type DitherShaderDef } from '@/shaders/ditherShaders';
-import { ChevronLeft, ChevronRight, Shuffle, Maximize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Shuffle, Maximize2, Search, X } from 'lucide-react';
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
@@ -36,6 +36,7 @@ const FEATURED_BG_IDS = [
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [previewShader, setPreviewShader] = useState<DitherShaderDef | null>(null);
   const isModalOpen = previewShader !== null;
   const [showGuide, setShowGuide] = useState(false);
@@ -54,11 +55,22 @@ const Index = () => {
   const currentBgShader = useMemo(() => bgShaders[bgShaderIndex] ?? ALL_SHADERS[0], [bgShaders, bgShaderIndex]);
 
   const filteredShaders = useMemo(() => {
-    if (activeCategory === 'all') return ALL_SHADERS;
-    return ALL_SHADERS.filter(s =>
-      s.tags.some(t => t.toLowerCase().includes(activeCategory))
-    );
-  }, [activeCategory]);
+    let result = ALL_SHADERS;
+    if (activeCategory !== 'all') {
+      result = result.filter(s =>
+        s.tags.some(t => t.toLowerCase().includes(activeCategory))
+      );
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q) ||
+        s.tags.some(t => t.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [activeCategory, searchQuery]);
 
   const totalPages = Math.ceil(filteredShaders.length / ITEMS_PER_PAGE);
   const displayedShaders = useMemo(() => filteredShaders.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE), [filteredShaders, currentPage]);
@@ -67,6 +79,12 @@ const Index = () => {
 
   const handleCategoryChange = useCallback((cat: string) => {
     setActiveCategory(cat);
+    setSearchQuery('');
+    setCurrentPage(0);
+  }, []);
+
+  const handleSearch = useCallback((value: string) => {
+    setSearchQuery(value);
     setCurrentPage(0);
   }, []);
 
@@ -226,11 +244,33 @@ const Index = () => {
         <section id="gallery" className="border-t border-border bg-background/80 backdrop-blur-sm">
           <div className="container py-20">
             <div className="mb-8">
-              <p className="section-label mb-2">Full Collection</p>
-              <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground mb-6">
-                {activeCategory === 'all' ? 'All Shaders' : CATEGORIES.find(c => c.id === activeCategory)?.label}
-                <span className="text-muted-foreground font-normal text-lg ml-3">({filteredShaders.length})</span>
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+                <div>
+                  <p className="section-label mb-2">Full Collection</p>
+                  <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground">
+                    {activeCategory === 'all' ? 'All Shaders' : CATEGORIES.find(c => c.id === activeCategory)?.label}
+                    <span className="text-muted-foreground font-normal text-lg ml-3">({filteredShaders.length})</span>
+                  </h2>
+                </div>
+                <div className="relative sm:ml-auto w-full sm:w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    placeholder="Search shaders..."
+                    className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-border bg-background/60 backdrop-blur-sm font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => handleSearch('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map(cat => (
                   <button
