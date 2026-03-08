@@ -36,6 +36,7 @@ const FEATURED_BG_IDS = [
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [previewShader, setPreviewShader] = useState<DitherShaderDef | null>(null);
   const isModalOpen = previewShader !== null;
   const [showGuide, setShowGuide] = useState(false);
