@@ -329,16 +329,236 @@ const SCANLINE_DITHER: DitherShaderDef = {
   `,
 };
 
+const DIAMOND_DITHER: DitherShaderDef = {
+  id: 'diamond',
+  name: 'Diamond Grid',
+  description: 'Diamond-shaped threshold pattern creating a woven fabric-like dithering effect with geometric precision.',
+  tags: ['geometric', 'pattern', 'grid'],
+  featured: false,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float dist = length(uv - u_mouse);
+      float wave = sin(dist * 16.0 - u_time * 2.5) * 0.5 + 0.5;
+      float gradient = mix(wave, uv.y, 0.25);
+      vec2 p = mod(gl_FragCoord.xy, 8.0) - 4.0;
+      float diamond = (abs(p.x) + abs(p.y)) / 8.0;
+      float col = step(diamond, gradient);
+      vec3 c1 = vec3(1.0, 0.8, 0.0);
+      vec3 c2 = vec3(0.06, 0.04, 0.0);
+      gl_FragColor = vec4(mix(c2, c1, col), 1.0);
+    }
+  `,
+};
+
+const SPIRAL_DITHER: DitherShaderDef = {
+  id: 'spiral',
+  name: 'Spiral Flow',
+  description: 'Hypnotic spiral-based dithering with rotating threshold patterns that follow your cursor.',
+  tags: ['animated', 'hypnotic', 'spiral'],
+  featured: true,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      vec2 center = u_mouse;
+      vec2 d = uv - center;
+      float angle = atan(d.y, d.x);
+      float dist = length(d);
+      float spiral = sin(angle * 5.0 + dist * 30.0 - u_time * 3.0) * 0.5 + 0.5;
+      float radialGrad = 1.0 - dist * 1.5;
+      float val = spiral * radialGrad;
+      vec2 p = floor(gl_FragCoord.xy / 3.0);
+      float pattern = mod(p.x + p.y, 2.0) * 0.3;
+      float col = step(pattern, val);
+      vec3 c1 = vec3(0.2, 1.0, 0.8);
+      vec3 c2 = vec3(0.0, 0.08, 0.12);
+      gl_FragColor = vec4(mix(c2, c1, col), 1.0);
+    }
+  `,
+};
+
+const PIXEL_SORT_DITHER: DitherShaderDef = {
+  id: 'pixel-sort',
+  name: 'Pixel Sort',
+  description: 'Glitch-art inspired pixel sorting effect combined with threshold dithering for a corrupted digital aesthetic.',
+  tags: ['glitch', 'digital', 'sort'],
+  featured: false,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float dist = length(uv - u_mouse);
+      float val = sin(dist * 10.0 - u_time * 2.0) * 0.5 + 0.5;
+      
+      float sortThreshold = 0.3 + sin(u_time * 0.5) * 0.2;
+      float row = floor(gl_FragCoord.y / 2.0);
+      float offset = step(sortThreshold, val) * sin(row * 0.1 + u_time * 5.0) * 50.0;
+      vec2 sortedUV = vec2((gl_FragCoord.x + offset) / u_resolution.x, uv.y);
+      
+      float sortedDist = length(sortedUV - u_mouse);
+      float sortedVal = sin(sortedDist * 10.0 - u_time * 2.0) * 0.5 + 0.5;
+      float noise = hash(vec2(floor(gl_FragCoord.x + offset), row));
+      float col = step(noise * 0.5, sortedVal);
+      
+      vec3 c1 = vec3(1.0, 0.1, 0.3);
+      vec3 c2 = vec3(0.0, 0.02, 0.05);
+      vec3 c3 = vec3(0.1, 0.0, 0.3);
+      gl_FragColor = vec4(mix(c2, mix(c3, c1, uv.x), col), 1.0);
+    }
+  `,
+};
+
+const WAVE_DITHER: DitherShaderDef = {
+  id: 'wave',
+  name: 'Wave Interference',
+  description: 'Overlapping sine wave patterns creating moiré-like interference dithering with flowing motion.',
+  tags: ['waves', 'moiré', 'interference'],
+  featured: true,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float t = u_time * 1.5;
+      
+      float w1 = sin(uv.x * 40.0 + t) * 0.5 + 0.5;
+      float w2 = sin(uv.y * 35.0 - t * 0.7) * 0.5 + 0.5;
+      float w3 = sin((uv.x + uv.y) * 25.0 + t * 0.5) * 0.5 + 0.5;
+      
+      float mouseDist = length(uv - u_mouse);
+      float mouseWave = sin(mouseDist * 30.0 - t * 3.0) * 0.5 + 0.5;
+      
+      float combined = (w1 + w2 + w3 + mouseWave) / 4.0;
+      
+      vec2 p = floor(gl_FragCoord.xy / 2.0);
+      float checker = mod(p.x + p.y, 2.0);
+      float col = step(checker * 0.4 + 0.1, combined);
+      
+      vec3 c1 = vec3(0.4, 0.6, 1.0);
+      vec3 c2 = vec3(0.0, 0.02, 0.08);
+      gl_FragColor = vec4(mix(c2, c1, col), 1.0);
+    }
+  `,
+};
+
+const ERROR_DIFFUSION: DitherShaderDef = {
+  id: 'error-diffusion',
+  name: 'Error Diffusion',
+  description: 'Approximation of Floyd-Steinberg error diffusion in real-time. Smooth gradients with organic noise distribution.',
+  tags: ['floyd-steinberg', 'smooth', 'organic'],
+  featured: false,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    float hash(vec2 p) {
+      vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+      p3 += dot(p3, p3.yzx + 33.33);
+      return fract((p3.x + p3.y) * p3.z);
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float dist = length(uv - u_mouse);
+      float val = sin(dist * 14.0 - u_time * 2.0) * 0.3 + 0.5;
+      val = mix(val, uv.x * 0.8 + uv.y * 0.2, 0.4);
+      
+      // Simulated error diffusion
+      float pixelSize = 2.0;
+      vec2 pixelPos = floor(gl_FragCoord.xy / pixelSize);
+      float n1 = hash(pixelPos) * 0.15;
+      float n2 = hash(pixelPos + vec2(1.0, 0.0)) * 0.07;
+      float n3 = hash(pixelPos + vec2(-1.0, 1.0)) * 0.03;
+      float n4 = hash(pixelPos + vec2(0.0, 1.0)) * 0.05;
+      float error = (n1 + n2 + n3 + n4) - 0.15;
+      
+      float col = step(0.5, val + error);
+      vec3 c1 = vec3(0.92, 0.88, 0.82);
+      vec3 c2 = vec3(0.1, 0.08, 0.06);
+      gl_FragColor = vec4(mix(c2, c1, col), 1.0);
+    }
+  `,
+};
+
+const MATRIX_RAIN: DitherShaderDef = {
+  id: 'matrix-rain',
+  name: 'Matrix Rain',
+  description: 'Digital rain effect with cascading dithered columns. A tribute to the iconic falling code aesthetic.',
+  tags: ['digital', 'rain', 'cascade'],
+  featured: false,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float colWidth = 8.0;
+      float col = floor(gl_FragCoord.x / colWidth);
+      float speed = hash(vec2(col, 0.0)) * 2.0 + 1.0;
+      float offset = hash(vec2(col, 1.0)) * 100.0;
+      float y = fract((gl_FragCoord.y / u_resolution.y) + u_time * speed * 0.1 + offset);
+      float brightness = pow(y, 3.0);
+      
+      float mouseDist = abs(uv.x - u_mouse.x);
+      float mouseGlow = exp(-mouseDist * 8.0) * 0.5;
+      brightness += mouseGlow;
+      
+      float cellY = floor(gl_FragCoord.y / colWidth);
+      float charHash = hash(vec2(col, cellY + floor(u_time * speed)));
+      float pattern = step(0.3, charHash) * brightness;
+      
+      vec3 c = vec3(0.0, pattern * 0.9, pattern * 0.3);
+      c += vec3(0.0, mouseGlow * 0.5, mouseGlow * 0.2);
+      gl_FragColor = vec4(c, 1.0);
+    }
+  `,
+};
+
 export const ALL_SHADERS: DitherShaderDef[] = [
   BAYER_DITHER,
   HALFTONE_DITHER,
   NOISE_DITHER,
   CROSSHATCH_DITHER,
   BLUE_NOISE_DITHER,
+  SPIRAL_DITHER,
+  WAVE_DITHER,
   STIPPLE_DITHER,
   CHECKERBOARD_DITHER,
   VORONOI_DITHER,
   SCANLINE_DITHER,
+  DIAMOND_DITHER,
+  PIXEL_SORT_DITHER,
+  ERROR_DIFFUSION,
+  MATRIX_RAIN,
 ];
 
 export const FEATURED_SHADERS = ALL_SHADERS.filter(s => s.featured);
