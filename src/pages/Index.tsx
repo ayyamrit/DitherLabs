@@ -4,7 +4,7 @@ import ShaderPreviewModal from '@/components/ShaderPreviewModal';
 import UsageGuide from '@/components/UsageGuide';
 import ShaderCanvas from '@/components/ShaderCanvas';
 import { ALL_SHADERS, FEATURED_SHADERS, type DitherShaderDef } from '@/shaders/ditherShaders';
-import { ChevronLeft, ChevronRight, Shuffle, Maximize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Shuffle, Maximize2, Search, X } from 'lucide-react';
 
 const CATEGORIES = [
   { id: 'all', label: 'All' },
