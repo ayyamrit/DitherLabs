@@ -54,7 +54,7 @@ const ShaderPreviewModal = ({ shader, onClose }: ShaderPreviewModalProps) => {
 
         {/* Shader Preview */}
         <div className="aspect-video w-full bg-background relative">
-          <ShaderCanvas shader={shader} active={true} resolution={800} mouseEnabled={mouseEnabled} />
+          <ShaderCanvas shader={shader} active={true} resolution={800} mouseEnabled={mouseEnabled} alwaysRender={true} />
           {!mouseEnabled && (
             <div className="absolute top-3 left-3 font-mono text-[10px] px-2 py-1 rounded bg-background/70 backdrop-blur-sm border border-border text-muted-foreground">
               mouse disabled

@@ -26,7 +26,7 @@ const CATEGORIES = [
   { id: 'lowpoly', label: 'Low Poly' },
 ];
 
-const ITEMS_PER_PAGE = 24;
+const ITEMS_PER_PAGE = 18;
 
 const FEATURED_BG_IDS = [
   '3d-rotating-cube', '3d-metaballs', '3d-terrain', '3d-torus-knot',
@@ -48,7 +48,7 @@ const Index = () => {
     []
   );
 
-  const bestShaders = useMemo(() => FEATURED_SHADERS.slice(0, 10), []);
+  const bestShaders = useMemo(() => FEATURED_SHADERS.slice(0, 6), []);
 
   const currentBgShader = useMemo(() => bgShaders[bgShaderIndex] ?? ALL_SHADERS[0], [bgShaders, bgShaderIndex]);
 

@@ -21,6 +21,7 @@ import { shaderPack20 } from './shaderPack20';
 import { shaderPack3D } from './shaderPack3D';
 import { shaderPack21 } from './shaderPack21';
 import { shaderPack22 } from './shaderPack22';
+import { shaderPack23 } from './shaderPack23';
 
 export interface DitherShaderDef {
   id: string;
@@ -1064,6 +1065,7 @@ export const ALL_SHADERS: DitherShaderDef[] = [
   ...shaderPack3D,
   ...shaderPack21,
   ...shaderPack22,
+  ...shaderPack23,
 ];
 
 export const FEATURED_SHADERS = ALL_SHADERS.filter(s => s.featured);
