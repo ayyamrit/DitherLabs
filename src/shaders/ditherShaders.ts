@@ -40,6 +40,8 @@ import { shaderPack31 } from './shaderPack31';
 import { shaderPack32 } from './shaderPack32';
 import { shaderPack33 } from './shaderPack33';
 import { shaderPackSky } from './shaderPackSky';
+import { shaderPack44 } from './shaderPack44';
+import { shaderPack45 } from './shaderPack45';
 
 export interface DitherShaderDef {
   id: string;
@@ -1102,6 +1104,8 @@ export const ALL_SHADERS: DitherShaderDef[] = [
   ...shaderPack32,
   ...shaderPack33,
   ...shaderPackSky,
+  ...shaderPack44,
+  ...shaderPack45,
 ];
 
 export const FEATURED_SHADERS = ALL_SHADERS.filter(s => s.featured);
