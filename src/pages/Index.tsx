@@ -253,16 +253,27 @@ const Index = () => {
               ))}
             </div>
 
-            {hasMore && (
-              <div className="flex justify-center mt-10">
+            <div className="flex items-center justify-center gap-4 mt-10">
+              {hasPrev && (
                 <button
-                  onClick={handleLoadMore}
-                  className="font-mono text-sm px-8 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
+                  onClick={handlePrevPage}
+                  className="font-mono text-sm px-6 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
                 >
-                  Load More ({filteredShaders.length - visibleCount} remaining)
+                  ← Previous
                 </button>
-              </div>
-            )}
+              )}
+              <span className="font-mono text-xs text-muted-foreground">
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              {hasMore && (
+                <button
+                  onClick={handleNextPage}
+                  className="font-mono text-sm px-6 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
+                >
+                  Next →
+                </button>
+              )}
+            </div>
           </div>
         </section>
 
