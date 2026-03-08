@@ -59,8 +59,10 @@ const Index = () => {
     );
   }, [activeCategory]);
 
-  const displayedShaders = useMemo(() => filteredShaders.slice(0, visibleCount), [filteredShaders, visibleCount]);
-  const hasMore = visibleCount < filteredShaders.length;
+  const totalPages = Math.ceil(filteredShaders.length / ITEMS_PER_PAGE);
+  const displayedShaders = useMemo(() => filteredShaders.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE), [filteredShaders, currentPage]);
+  const hasMore = currentPage < totalPages - 1;
+  const hasPrev = currentPage > 0;
 
   const handleCategoryChange = useCallback((cat: string) => {
     setActiveCategory(cat);
