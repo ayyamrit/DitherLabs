@@ -48,7 +48,7 @@ const Index = () => {
     []
   );
 
-  const bestShaders = useMemo(() => FEATURED_SHADERS.slice(0, 10), []);
+  const bestShaders = useMemo(() => FEATURED_SHADERS.slice(0, 6), []);
 
   const currentBgShader = useMemo(() => bgShaders[bgShaderIndex] ?? ALL_SHADERS[0], [bgShaders, bgShaderIndex]);
 
