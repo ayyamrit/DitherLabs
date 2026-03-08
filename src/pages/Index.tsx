@@ -103,7 +103,7 @@ const Index = () => {
           className="w-full h-full"
         />
         {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 bg-background/35 backdrop-blur-[0.5px]" />
       </div>
 
       {/* Background shader controls - fixed */}
