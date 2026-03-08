@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import ShaderCard from '@/components/ShaderCard';
 import ShaderPreviewModal from '@/components/ShaderPreviewModal';
 import UsageGuide from '@/components/UsageGuide';
+import HeroShaderShowcase from '@/components/HeroShaderShowcase';
 import { ALL_SHADERS, type DitherShaderDef } from '@/shaders/ditherShaders';
 
 // Derive categories from tags
@@ -73,30 +74,39 @@ const Index = () => {
       </nav>
 
       {/* Hero */}
-      <section className="relative flex items-center justify-center min-h-[60vh] overflow-hidden pt-14">
+      <section className="relative overflow-hidden pt-14">
         <div className="absolute inset-0 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-accent/5 to-background" />
           <div className="absolute inset-0" style={{
-            backgroundImage: `radial-gradient(circle at 30% 40%, hsl(var(--primary) / 0.1) 0%, transparent 50%), radial-gradient(circle at 70% 60%, hsl(var(--accent) / 0.08) 0%, transparent 50%)`
+            backgroundImage: `radial-gradient(circle at 30% 20%, hsl(var(--primary) / 0.08) 0%, transparent 40%), radial-gradient(circle at 70% 80%, hsl(var(--accent) / 0.06) 0%, transparent 40%)`
           }} />
         </div>
-        <div className="relative z-10 text-center px-4 max-w-3xl mx-auto">
-          <p className="section-label mb-4">WebGL Shader Collection</p>
-          <h1 className="font-display font-bold text-5xl sm:text-7xl md:text-8xl tracking-tight text-foreground mb-6 leading-[0.9]">
-            dither
-            <br />
-            <span className="text-gradient-primary">laboratory</span>
-          </h1>
-          <p className="font-display text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto mb-8 font-light">
-            {ALL_SHADERS.length}+ interactive WebGL shaders — 2D animations, 3D raymarching, dithering algorithms & more. Hover to interact, click to preview.
-          </p>
-          <button
-            onClick={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-display font-semibold text-sm hover:opacity-90 transition-opacity"
-          >
-            Explore Shaders
-            <span className="text-lg">↓</span>
-          </button>
+        
+        <div className="relative z-10 container py-12 sm:py-16">
+          {/* Header */}
+          <div className="text-center mb-10">
+            <p className="section-label mb-3">WebGL Shader Collection</p>
+            <h1 className="font-display font-bold text-4xl sm:text-6xl md:text-7xl tracking-tight text-foreground mb-4 leading-[0.95]">
+              dither<span className="text-gradient-primary">lab</span>
+            </h1>
+            <p className="font-display text-base sm:text-lg text-muted-foreground max-w-lg mx-auto font-light">
+              {ALL_SHADERS.length}+ interactive WebGL shaders — hover to interact, click for fullscreen
+            </p>
+          </div>
+
+          {/* Live Shader Showcase */}
+          <HeroShaderShowcase onPreview={setPreviewShader} />
+
+          {/* CTA */}
+          <div className="text-center mt-10">
+            <button
+              onClick={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-display font-semibold text-sm hover:opacity-90 transition-opacity"
+            >
+              Browse All Shaders
+              <span className="text-lg">↓</span>
+            </button>
+          </div>
         </div>
       </section>
 
