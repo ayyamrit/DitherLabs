@@ -447,7 +447,7 @@ export const shaderPack20: DitherShaderDef[] = [
   {
     id: 'newton-cradle',
     name: 'Newton Cradle',
-    description: '2D animated Newton\\'s cradle with momentum transfer between balls.',
+    description: '2D animated Newtons cradle with momentum transfer between balls.',
     tags: ['2d', 'animated', 'physics'],
     fragmentShader: `
       precision mediump float;
