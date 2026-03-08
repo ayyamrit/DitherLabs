@@ -185,101 +185,109 @@ const Index = () => {
           </div>
         </section>
 
-      {/* ✨ Preview Best Shaders Section */}
-      <section id="best" className="border-t border-border">
-        <div className="container py-20">
-          <div className="mb-8">
-            <p className="section-label mb-2">Handpicked</p>
-            <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground mb-3">
-              Best Shaders
-              <span className="text-muted-foreground font-normal text-lg ml-3">({bestShaders.length})</span>
-            </h2>
-            <p className="font-display text-sm text-muted-foreground max-w-lg">
-              Our top picks — the most visually striking and technically impressive shaders in the collection.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {bestShaders.map((shader) => (
-              <ShaderCard key={shader.id} shader={shader} onPreview={handlePreview} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Usage Guide */}
-      {showGuide && <UsageGuide />}
-
-      {/* Full Gallery */}
-      <section id="gallery" className="border-t border-border">
-        <div className="container py-20">
-          <div className="mb-8">
-            <p className="section-label mb-2">Full Collection</p>
-            <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground mb-6">
-              {activeCategory === 'all' ? 'All Shaders' : CATEGORIES.find(c => c.id === activeCategory)?.label}
-              <span className="text-muted-foreground font-normal text-lg ml-3">({filteredShaders.length})</span>
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleCategoryChange(cat.id)}
-                  className={`font-mono text-xs px-3 py-1.5 rounded-full border transition-all ${
-                    activeCategory === cat.id
-                      ? 'border-primary bg-primary/15 text-primary'
-                      : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30 bg-background/50'
-                  }`}
-                >
-                  {cat.label}
-                </button>
+        {/* ✨ Preview Best Shaders Section */}
+        <section id="best" className="border-t border-border bg-background/80 backdrop-blur-sm">
+          <div className="container py-20">
+            <div className="mb-8">
+              <p className="section-label mb-2">Handpicked</p>
+              <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground mb-3">
+                Best Shaders
+                <span className="text-muted-foreground font-normal text-lg ml-3">({bestShaders.length})</span>
+              </h2>
+              <p className="font-display text-sm text-muted-foreground max-w-lg">
+                Our top picks — the most visually striking and technically impressive shaders in the collection.
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {bestShaders.map((shader) => (
+                <ShaderCard key={shader.id} shader={shader} onPreview={handlePreview} />
               ))}
             </div>
           </div>
+        </section>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {displayedShaders.map((shader) => (
-              <ShaderCard key={shader.id} shader={shader} onPreview={handlePreview} />
-            ))}
+        {/* Usage Guide */}
+        {showGuide && (
+          <div className="bg-background/80 backdrop-blur-sm">
+            <UsageGuide />
           </div>
+        )}
 
-          {hasMore && (
-            <div className="flex justify-center mt-10">
-              <button
-                onClick={handleLoadMore}
-                className="font-mono text-sm px-8 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
-              >
-                Load More ({filteredShaders.length - visibleCount} remaining)
-              </button>
+        {/* Full Gallery */}
+        <section id="gallery" className="border-t border-border bg-background/80 backdrop-blur-sm">
+          <div className="container py-20">
+            <div className="mb-8">
+              <p className="section-label mb-2">Full Collection</p>
+              <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground mb-6">
+                {activeCategory === 'all' ? 'All Shaders' : CATEGORIES.find(c => c.id === activeCategory)?.label}
+                <span className="text-muted-foreground font-normal text-lg ml-3">({filteredShaders.length})</span>
+              </h2>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => handleCategoryChange(cat.id)}
+                    className={`font-mono text-xs px-3 py-1.5 rounded-full border transition-all ${
+                      activeCategory === cat.id
+                        ? 'border-primary bg-primary/15 text-primary'
+                        : 'border-border text-muted-foreground hover:text-foreground hover:border-primary/30 bg-background/50'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
-        </div>
-      </section>
 
-      {/* Info */}
-      <section className="border-t border-border">
-        <div className="container py-20">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div>
-              <h3 className="font-display font-semibold text-foreground mb-3">Mouse Interactive</h3>
-              <p className="font-display text-sm text-muted-foreground leading-relaxed">Every shader responds to your cursor position in real-time.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {displayedShaders.map((shader) => (
+                <ShaderCard key={shader.id} shader={shader} onPreview={handlePreview} />
+              ))}
             </div>
-            <div>
-              <h3 className="font-display font-semibold text-foreground mb-3">Pure WebGL</h3>
-              <p className="font-display text-sm text-muted-foreground leading-relaxed">Raw GLSL fragment shaders running at native GPU speed.</p>
-            </div>
-            <div>
-              <h3 className="font-display font-semibold text-foreground mb-3">Copy & Use</h3>
-              <p className="font-display text-sm text-muted-foreground leading-relaxed">Preview fullscreen and copy GLSL code for your own projects.</p>
+
+            {hasMore && (
+              <div className="flex justify-center mt-10">
+                <button
+                  onClick={handleLoadMore}
+                  className="font-mono text-sm px-8 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
+                >
+                  Load More ({filteredShaders.length - visibleCount} remaining)
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Info */}
+        <section className="border-t border-border bg-background/80 backdrop-blur-sm">
+          <div className="container py-20">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              <div>
+                <h3 className="font-display font-semibold text-foreground mb-3">Mouse Interactive</h3>
+                <p className="font-display text-sm text-muted-foreground leading-relaxed">Every shader responds to your cursor position in real-time.</p>
+              </div>
+              <div>
+                <h3 className="font-display font-semibold text-foreground mb-3">Pure WebGL</h3>
+                <p className="font-display text-sm text-muted-foreground leading-relaxed">Raw GLSL fragment shaders running at native GPU speed.</p>
+              </div>
+              <div>
+                <h3 className="font-display font-semibold text-foreground mb-3">Copy & Use</h3>
+                <p className="font-display text-sm text-muted-foreground leading-relaxed">Preview fullscreen and copy GLSL code for your own projects.</p>
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <footer className="border-t border-border">
-        <div className="container py-8 flex items-center justify-between">
-          <span className="font-mono text-xs text-muted-foreground">dither.lab © {new Date().getFullYear()}</span>
-          <span className="font-mono text-xs text-muted-foreground">built with webgl + react</span>
-        </div>
-      </footer>
+        <footer className="border-t border-border bg-background/80 backdrop-blur-sm">
+          <div className="container py-8 flex items-center justify-between">
+            <span className="font-mono text-xs text-muted-foreground">dither.lab © {new Date().getFullYear()}</span>
+            <span className="font-mono text-xs text-muted-foreground">built with webgl + react</span>
+          </div>
+        </footer>
+
+        {/* Spacer for bottom controls */}
+        <div className="h-20" />
+      </div>
 
       {previewShader && (
         <ShaderPreviewModal shader={previewShader} onClose={handleClosePreview} />
