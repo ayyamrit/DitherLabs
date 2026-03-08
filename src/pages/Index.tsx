@@ -55,11 +55,22 @@ const Index = () => {
   const currentBgShader = useMemo(() => bgShaders[bgShaderIndex] ?? ALL_SHADERS[0], [bgShaders, bgShaderIndex]);
 
   const filteredShaders = useMemo(() => {
-    if (activeCategory === 'all') return ALL_SHADERS;
-    return ALL_SHADERS.filter(s =>
-      s.tags.some(t => t.toLowerCase().includes(activeCategory))
-    );
-  }, [activeCategory]);
+    let result = ALL_SHADERS;
+    if (activeCategory !== 'all') {
+      result = result.filter(s =>
+        s.tags.some(t => t.toLowerCase().includes(activeCategory))
+      );
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q) ||
+        s.tags.some(t => t.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [activeCategory, searchQuery]);
 
   const totalPages = Math.ceil(filteredShaders.length / ITEMS_PER_PAGE);
   const displayedShaders = useMemo(() => filteredShaders.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE), [filteredShaders, currentPage]);
