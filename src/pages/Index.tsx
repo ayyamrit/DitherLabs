@@ -58,7 +58,7 @@ const Index = () => {
     []
   );
 
-  const currentBgShader = bgShaders[bgShaderIndex];
+  const currentBgShader = bgShaders[bgShaderIndex] ?? ALL_SHADERS[0];
 
   const filteredShaders = useMemo(() => {
     if (activeCategory === 'all') return ALL_SHADERS;
@@ -76,14 +76,17 @@ const Index = () => {
   };
 
   const nextBgShader = useCallback(() => {
+    if (!bgShaders.length) return;
     setBgShaderIndex(prev => (prev + 1) % bgShaders.length);
   }, [bgShaders.length]);
 
   const prevBgShader = useCallback(() => {
+    if (!bgShaders.length) return;
     setBgShaderIndex(prev => (prev - 1 + bgShaders.length) % bgShaders.length);
   }, [bgShaders.length]);
 
   const randomBgShader = useCallback(() => {
+    if (!bgShaders.length) return;
     const newIndex = Math.floor(Math.random() * bgShaders.length);
     setBgShaderIndex(newIndex);
   }, [bgShaders.length]);
@@ -100,7 +103,7 @@ const Index = () => {
           className="w-full h-full"
         />
         {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-[1px]" />
+        <div className="absolute inset-0 bg-background/35 backdrop-blur-[0.5px]" />
       </div>
 
       {/* Background shader controls - fixed */}
