@@ -79,6 +79,12 @@ const Index = () => {
 
   const handleCategoryChange = useCallback((cat: string) => {
     setActiveCategory(cat);
+    setSearchQuery('');
+    setCurrentPage(0);
+  }, []);
+
+  const handleSearch = useCallback((value: string) => {
+    setSearchQuery(value);
     setCurrentPage(0);
   }, []);
 
