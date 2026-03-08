@@ -66,7 +66,7 @@ const Index = () => {
 
   const handleCategoryChange = useCallback((cat: string) => {
     setActiveCategory(cat);
-    setVisibleCount(ITEMS_PER_PAGE);
+    setCurrentPage(0);
   }, []);
 
   const handlePreview = useCallback((shader: DitherShaderDef) => {
