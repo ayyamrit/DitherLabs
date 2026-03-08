@@ -27,8 +27,10 @@ export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShader
     if (!canvas) return;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const displayWidth = Math.max(1, Math.floor(canvas.clientWidth * dpr));
-    const displayHeight = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+    const cssWidth = canvas.clientWidth || canvas.width || 1;
+    const cssHeight = canvas.clientHeight || canvas.height || 1;
+    const displayWidth = Math.max(1, Math.floor(cssWidth * dpr));
+    const displayHeight = Math.max(1, Math.floor(cssHeight * dpr));
 
     if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
       canvas.width = displayWidth;
