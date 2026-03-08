@@ -7,16 +7,16 @@ interface ShaderCanvasProps {
   className?: string;
   active?: boolean;
   resolution?: number;
+  mouseEnabled?: boolean;
 }
 
-const ShaderCanvas = ({ shader, className = '', active = true, resolution = 400 }: ShaderCanvasProps) => {
+const ShaderCanvas = ({ shader, className = '', active = true, resolution = 400, mouseEnabled = true }: ShaderCanvasProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-
     const observer = new IntersectionObserver(
       ([entry]) => setIsVisible(entry.isIntersecting),
       { threshold: 0.1 }
@@ -38,7 +38,7 @@ const ShaderCanvas = ({ shader, className = '', active = true, resolution = 400 
         ref={canvasRef}
         width={resolution}
         height={resolution}
-        onMouseMove={handleMouseMove}
+        onMouseMove={mouseEnabled ? handleMouseMove : undefined}
         className="w-full h-full block"
         style={{ imageRendering: 'auto' }}
       />

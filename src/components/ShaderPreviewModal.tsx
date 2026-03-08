@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import ShaderCanvas from './ShaderCanvas';
 import type { DitherShaderDef } from '@/shaders/ditherShaders';
-import { X } from 'lucide-react';
+import { X, Mouse, MouseOff } from 'lucide-react';
 
 interface ShaderPreviewModalProps {
   shader: DitherShaderDef;
@@ -10,6 +10,7 @@ interface ShaderPreviewModalProps {
 
 const ShaderPreviewModal = ({ shader, onClose }: ShaderPreviewModalProps) => {
   const [copied, setCopied] = useState(false);
+  const [mouseEnabled, setMouseEnabled] = useState(true);
 
   const copyShader = () => {
     navigator.clipboard.writeText(shader.fragmentShader.trim());
@@ -30,17 +31,35 @@ const ShaderPreviewModal = ({ shader, onClose }: ShaderPreviewModalProps) => {
             <h2 className="font-display font-bold text-xl text-foreground">{shader.name}</h2>
             <p className="font-mono text-xs text-muted-foreground mt-1">{shader.description}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMouseEnabled(!mouseEnabled)}
+              className={`p-2 rounded-lg border transition-all ${
+                mouseEnabled
+                  ? 'border-primary/40 text-primary bg-primary/10'
+                  : 'border-border text-muted-foreground hover:text-foreground'
+              }`}
+              title={mouseEnabled ? 'Disable mouse interaction' : 'Enable mouse interaction'}
+            >
+              {mouseEnabled ? <Mouse size={18} /> : <MouseOff size={18} />}
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Shader Preview */}
-        <div className="aspect-video w-full bg-background">
-          <ShaderCanvas shader={shader} active={true} resolution={800} />
+        <div className="aspect-video w-full bg-background relative">
+          <ShaderCanvas shader={shader} active={true} resolution={800} mouseEnabled={mouseEnabled} />
+          {!mouseEnabled && (
+            <div className="absolute top-3 left-3 font-mono text-[10px] px-2 py-1 rounded bg-background/70 backdrop-blur-sm border border-border text-muted-foreground">
+              mouse disabled
+            </div>
+          )}
         </div>
 
         {/* Footer */}
