@@ -27,6 +27,7 @@ import { shaderPack24 } from './shaderPack24';
 import { shaderPack25 } from './shaderPack25';
 import { shaderPack26 } from './shaderPack26';
 import { shaderPack27 } from './shaderPack27';
+import { shaderPack28 } from './shaderPack28';
 
 export interface DitherShaderDef {
   id: string;
