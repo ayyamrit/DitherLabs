@@ -19,6 +19,7 @@ import { shaderPack18 } from './shaderPack18';
 import { shaderPack19 } from './shaderPack19';
 import { shaderPack20 } from './shaderPack20';
 import { shaderPack3D } from './shaderPack3D';
+import { shaderPack21 } from './shaderPack21';
 
 export interface DitherShaderDef {
   id: string;
