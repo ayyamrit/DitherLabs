@@ -97,120 +97,93 @@ const Index = () => {
   const toggleGuide = useCallback(() => setShowGuide(prev => !prev), []);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur-md">
-        <div className="container flex items-center justify-between h-14">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="font-display font-bold text-foreground tracking-tight">
-              dither<span className="text-gradient-primary">lab</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <button
-              onClick={toggleGuide}
-              className="font-mono text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
-            >
-              {showGuide ? 'Hide Guide' : 'Usage Guide'}
-            </button>
-            <span className="section-label hidden sm:block">
-              {ALL_SHADERS.length} shaders
-            </span>
-          </div>
+    <div className="min-h-screen relative">
+      {/* Full-page shader background */}
+      <div className="fixed inset-0 z-0">
+        <ShaderCanvas
+          key={currentBgShader.id}
+          shader={currentBgShader}
+          active={true}
+          alwaysRender={true}
+          resolution={1024}
+          mouseEnabled={true}
+          className="w-full h-full"
+        />
+        <div className="absolute inset-0 bg-background/40 backdrop-blur-[1px]" />
+      </div>
+
+      {/* Background shader controls - fixed bottom */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-md border border-border shadow-xl">
+        <button onClick={prevBgShader} className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="Previous shader">
+          <ChevronLeft size={20} />
+        </button>
+        <div className="flex items-center gap-3 px-3">
+          <span className="font-mono text-xs text-muted-foreground">{bgShaderIndex + 1}/{bgShaders.length}</span>
+          <span className="font-display text-sm font-medium text-foreground max-w-[150px] truncate">{currentBgShader.name}</span>
         </div>
-      </nav>
+        <button onClick={randomBgShader} className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="Random shader">
+          <Shuffle size={16} />
+        </button>
+        <button onClick={nextBgShader} className="p-2 rounded-full hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="Next shader">
+          <ChevronRight size={20} />
+        </button>
+        <div className="w-px h-6 bg-border mx-1" />
+        <button
+          onClick={() => handlePreview(currentBgShader)}
+          className="font-mono text-xs px-3 py-1.5 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+        >
+          Fullscreen
+        </button>
+      </div>
 
-      {/* Hero Section */}
-      <section className="relative py-16 sm:py-24 overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px]" />
-          <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full bg-accent/5 blur-[100px]" />
-        </div>
-
-        <div className="container relative z-10">
-          <div className="text-center mb-10">
-            <p className="section-label mb-4">WebGL Shader Collection</p>
-            <h1 className="font-display font-bold text-5xl sm:text-7xl md:text-8xl tracking-tight mb-6 leading-[0.9]">
-              <span className="liquid-glass-text">dither</span>
-              <br />
-              <span className="liquid-metal-text">laboratory</span>
-            </h1>
-            <p className="font-display text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto font-light">
-              {ALL_SHADERS.length}+ interactive WebGL shaders. Preview how they look on your website.
-            </p>
-          </div>
-
-          {/* Centered Shader Preview Window */}
-          <div className="max-w-3xl mx-auto">
-            <div className="relative rounded-2xl border border-border overflow-hidden shadow-2xl bg-card hero-shader-window">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-card/90 backdrop-blur-sm">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="w-3 h-3 rounded-full bg-destructive/60" />
-                    <div className="w-3 h-3 rounded-full bg-accent/40" />
-                    <div className="w-3 h-3 rounded-full bg-primary/50" />
-                  </div>
-                  <span className="font-mono text-[11px] text-muted-foreground ml-3">
-                    {currentBgShader.name}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handlePreview(currentBgShader)}
-                  className="p-1.5 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
-                  title="Fullscreen preview"
-                >
-                  <Maximize2 size={14} />
-                </button>
-              </div>
-
-              <div className="aspect-video w-full relative bg-background">
-                <ShaderCanvas
-                  key={currentBgShader.id}
-                  shader={currentBgShader}
-                  active={true}
-                  alwaysRender={true}
-                  resolution={800}
-                  mouseEnabled={true}
-                  className="w-full h-full"
-                />
-              </div>
-
-              <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-card/90 backdrop-blur-sm">
-                <div className="flex items-center gap-1">
-                  <button onClick={prevBgShader} className="p-1.5 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="Previous">
-                    <ChevronLeft size={18} />
-                  </button>
-                  <button onClick={randomBgShader} className="p-1.5 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="Random">
-                    <Shuffle size={14} />
-                  </button>
-                  <button onClick={nextBgShader} className="p-1.5 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="Next">
-                    <ChevronRight size={18} />
-                  </button>
-                </div>
-                <span className="font-mono text-[11px] text-muted-foreground">
-                  {bgShaderIndex + 1} / {bgShaders.length}
-                </span>
-                <div className="flex gap-1.5 overflow-hidden max-w-[200px]">
-                  {currentBgShader.tags.slice(0, 3).map(tag => (
-                    <span key={tag} className="tag text-[10px]">{tag}</span>
-                  ))}
-                </div>
-              </div>
+      {/* Main content - scrollable over the shader */}
+      <div className="relative z-10">
+        {/* Navigation */}
+        <nav className="sticky top-0 z-50 border-b border-border bg-background/70 backdrop-blur-md">
+          <div className="container flex items-center justify-between h-14">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span className="font-display font-bold text-foreground tracking-tight">
+                dither<span className="text-gradient-primary">lab</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={toggleGuide}
+                className="font-mono text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
+              >
+                {showGuide ? 'Hide Guide' : 'Usage Guide'}
+              </button>
+              <span className="section-label hidden sm:block">
+                {ALL_SHADERS.length} shaders
+              </span>
             </div>
           </div>
+        </nav>
 
-          <div className="text-center mt-10">
-            <button
-              onClick={() => document.getElementById('best')?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-display font-semibold text-sm hover:opacity-90 transition-opacity"
-            >
-              Browse Collection
-              <span className="text-lg">↓</span>
-            </button>
+        {/* Hero Section - transparent so shader shows through */}
+        <section className="relative py-20 sm:py-32">
+          <div className="container">
+            <div className="text-center max-w-3xl mx-auto">
+              <p className="section-label mb-4">WebGL Shader Collection</p>
+              <h1 className="font-display font-bold text-5xl sm:text-7xl md:text-8xl tracking-tight mb-6 leading-[0.9]">
+                <span className="liquid-glass-text">dither</span>
+                <br />
+                <span className="liquid-metal-text">laboratory</span>
+              </h1>
+              <p className="font-display text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto mb-8 font-light">
+                {ALL_SHADERS.length}+ interactive WebGL shaders. Use the controls below to cycle through backgrounds in real-time.
+              </p>
+              <button
+                onClick={() => document.getElementById('best')?.scrollIntoView({ behavior: 'smooth' })}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-display font-semibold text-sm hover:opacity-90 transition-opacity"
+              >
+                Browse Collection
+                <span className="text-lg">↓</span>
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       {/* ✨ Preview Best Shaders Section */}
       <section id="best" className="border-t border-border">
