@@ -134,8 +134,8 @@ const Index = () => {
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-destructive/60" />
-                    <div className="w-3 h-3 rounded-full bg-yellow-500/60" />
-                    <div className="w-3 h-3 rounded-full bg-green-500/60" />
+                    <div className="w-3 h-3 rounded-full bg-accent/40" />
+                    <div className="w-3 h-3 rounded-full bg-primary/50" />
                   </div>
                   <span className="font-mono text-[11px] text-muted-foreground ml-3">
                     {currentBgShader.name}
