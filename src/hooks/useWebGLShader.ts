@@ -215,17 +215,9 @@ export function useWebGLShader({ fragmentShader, active = true, onCompileError }
 
   useEffect(() => {
     return () => {
-      cancelAnimationFrame(animFrameRef.current);
-      const gl = glRef.current;
-      if (gl) {
-        if (programRef.current) gl.deleteProgram(programRef.current);
-        if (bufferRef.current) gl.deleteBuffer(bufferRef.current);
-        const ext = gl.getExtension('WEBGL_lose_context');
-        if (ext) ext.loseContext();
-      }
-      glRef.current = null; programRef.current = null; bufferRef.current = null;
+      destroyGL(true);
     };
-  }, []);
+  }, [destroyGL]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
