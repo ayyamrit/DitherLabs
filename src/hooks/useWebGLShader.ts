@@ -87,7 +87,7 @@ export function useWebGLShader({ fragmentShader, active = true, onCompileError }
     if (!fs || 'error' in fs) {
       gl.deleteShader(vs as WebGLShader);
       if (fs && 'error' in fs) {
-        onCompileError?.(fs.error);
+        onCompileError?.((fs as { error: string }).error);
       }
       return null;
     }
