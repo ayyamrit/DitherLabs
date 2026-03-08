@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import ShaderCanvas from './ShaderCanvas';
 import type { DitherShaderDef } from '@/shaders/ditherShaders';
 import { Maximize2 } from 'lucide-react';
@@ -7,14 +8,13 @@ interface ShaderCardProps {
   onPreview: (shader: DitherShaderDef) => void;
 }
 
-const ShaderCard = ({ shader, onPreview }: ShaderCardProps) => {
+const ShaderCard = memo(({ shader, onPreview }: ShaderCardProps) => {
   return (
     <div className="shader-card group">
       <div className="relative aspect-square">
-        <ShaderCanvas shader={shader} />
+        <ShaderCanvas shader={shader} resolution={300} />
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
-        {/* Preview button */}
         <button
           onClick={() => onPreview(shader)}
           className="absolute top-3 right-3 p-2 rounded-lg bg-background/70 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground hover:bg-background/90 opacity-0 group-hover:opacity-100 transition-all duration-200"
@@ -46,6 +46,7 @@ const ShaderCard = ({ shader, onPreview }: ShaderCardProps) => {
       </div>
     </div>
   );
-};
+});
 
+ShaderCard.displayName = 'ShaderCard';
 export default ShaderCard;
