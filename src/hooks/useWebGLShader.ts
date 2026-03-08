@@ -16,69 +16,140 @@ export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShader
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const programRef = useRef<WebGLProgram | null>(null);
+  const bufferRef = useRef<WebGLBuffer | null>(null);
   const animFrameRef = useRef<number>(0);
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
   const startTimeRef = useRef(Date.now());
-  const initializedRef = useRef(false);
   const [ready, setReady] = useState(false);
 
-  const initGL = useCallback(() => {
+  const ensureCanvasSize = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas || initializedRef.current) return;
+    if (!canvas) return;
+
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const displayWidth = Math.max(1, Math.floor(canvas.clientWidth * dpr));
+    const displayHeight = Math.max(1, Math.floor(canvas.clientHeight * dpr));
+
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+    }
+  }, []);
+
+  const initContext = useCallback(() => {
+    if (glRef.current) return glRef.current;
+
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
 
     const gl = canvas.getContext('webgl', { antialias: false, preserveDrawingBuffer: false });
     if (!gl) {
       console.error('WebGL not supported');
-      return;
+      return null;
     }
-    glRef.current = gl;
 
-    const vs = gl.createShader(gl.VERTEX_SHADER)!;
+    glRef.current = gl;
+    return gl;
+  }, []);
+
+  const compileProgram = useCallback((gl: WebGLRenderingContext, nextFragmentShader: string) => {
+    const vs = gl.createShader(gl.VERTEX_SHADER);
+    if (!vs) return null;
     gl.shaderSource(vs, DEFAULT_VERTEX);
     gl.compileShader(vs);
     if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
       console.error('Vertex shader error:', gl.getShaderInfoLog(vs));
-      return;
+      gl.deleteShader(vs);
+      return null;
     }
 
-    const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
-    gl.shaderSource(fs, fragmentShader);
+    const fs = gl.createShader(gl.FRAGMENT_SHADER);
+    if (!fs) {
+      gl.deleteShader(vs);
+      return null;
+    }
+    gl.shaderSource(fs, nextFragmentShader);
     gl.compileShader(fs);
     if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
       console.error('Fragment shader error:', gl.getShaderInfoLog(fs));
-      return;
+      gl.deleteShader(vs);
+      gl.deleteShader(fs);
+      return null;
     }
 
-    const program = gl.createProgram()!;
+    const program = gl.createProgram();
+    if (!program) {
+      gl.deleteShader(vs);
+      gl.deleteShader(fs);
+      return null;
+    }
+
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
     gl.linkProgram(program);
-    
+
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
       console.error('Program link error:', gl.getProgramInfoLog(program));
+      gl.deleteProgram(program);
+      return null;
+    }
+
+    return program;
+  }, []);
+
+  const setupProgram = useCallback(() => {
+    const gl = initContext();
+    if (!gl) {
+      setReady(false);
       return;
     }
-    
-    programRef.current = program;
 
-    const buffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    ensureCanvasSize();
 
-    const posLoc = gl.getAttribLocation(program, 'a_position');
-    gl.enableVertexAttribArray(posLoc);
-    gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+    const nextProgram = compileProgram(gl, fragmentShader);
+    if (!nextProgram) {
+      setReady(false);
+      return;
+    }
 
-    gl.useProgram(program);
-    initializedRef.current = true;
+    if (programRef.current) {
+      gl.deleteProgram(programRef.current);
+    }
+
+    programRef.current = nextProgram;
+    gl.useProgram(nextProgram);
+
+    if (!bufferRef.current) {
+      const buffer = gl.createBuffer();
+      if (buffer) {
+        bufferRef.current = buffer;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+      }
+    } else {
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufferRef.current);
+    }
+
+    const posLoc = gl.getAttribLocation(nextProgram, 'a_position');
+    if (posLoc !== -1) {
+      gl.enableVertexAttribArray(posLoc);
+      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+    }
+
+    startTimeRef.current = Date.now();
     setReady(true);
-  }, [fragmentShader]);
+  }, [compileProgram, ensureCanvasSize, fragmentShader, initContext]);
 
   const renderFrame = useCallback(() => {
     const gl = glRef.current;
     const program = programRef.current;
     const canvas = canvasRef.current;
     if (!gl || !program || !canvas) return;
+
+    ensureCanvasSize();
 
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0, 0, 0, 1);
@@ -93,7 +164,12 @@ export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShader
     if (mouseLoc) gl.uniform2f(mouseLoc, mouseRef.current.x, mouseRef.current.y);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-  }, []);
+  }, [ensureCanvasSize]);
+
+  useEffect(() => {
+    if (!active) return;
+    setupProgram();
+  }, [active, setupProgram]);
 
   useEffect(() => {
     if (!active) {
@@ -101,33 +177,38 @@ export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShader
       return;
     }
 
-    initGL();
-
     const loop = () => {
       renderFrame();
       animFrameRef.current = requestAnimationFrame(loop);
     };
-    
-    // Small delay to ensure canvas is in DOM
-    const timeout = setTimeout(() => loop(), 50);
-    
+
+    animFrameRef.current = requestAnimationFrame(loop);
+
     return () => {
-      clearTimeout(timeout);
       cancelAnimationFrame(animFrameRef.current);
     };
-  }, [active, initGL, renderFrame]);
+  }, [active, renderFrame]);
 
-  // Cleanup GL on unmount
   useEffect(() => {
     return () => {
+      cancelAnimationFrame(animFrameRef.current);
+
       const gl = glRef.current;
       if (gl) {
+        if (programRef.current) {
+          gl.deleteProgram(programRef.current);
+        }
+        if (bufferRef.current) {
+          gl.deleteBuffer(bufferRef.current);
+        }
+
         const ext = gl.getExtension('WEBGL_lose_context');
         if (ext) ext.loseContext();
       }
+
       glRef.current = null;
       programRef.current = null;
-      initializedRef.current = false;
+      bufferRef.current = null;
     };
   }, []);
 
