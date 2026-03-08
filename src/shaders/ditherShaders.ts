@@ -31,6 +31,10 @@ import { shaderPack28 } from './shaderPack28';
 import { shaderPack29 } from './shaderPack29';
 import { shaderPack30 } from './shaderPack30';
 import { shaderPackNightCity } from './shaderPackNightCity';
+import { shaderPackRain } from './shaderPackRain';
+import { shaderPackNightCity2 } from './shaderPackNightCity2';
+import { shaderPackCarRide } from './shaderPackCarRide';
+import { shaderPackBeach } from './shaderPackBeach';
 
 export interface DitherShaderDef {
   id: string;
