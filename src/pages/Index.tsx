@@ -112,7 +112,7 @@ const Index = () => {
         <ShaderCanvas
           key={currentBgShader.id}
           shader={currentBgShader}
-          active={true}
+          active={!isModalOpen}
           alwaysRender={true}
           resolution={1024}
           mouseEnabled={true}
