@@ -244,11 +244,33 @@ const Index = () => {
         <section id="gallery" className="border-t border-border bg-background/80 backdrop-blur-sm">
           <div className="container py-20">
             <div className="mb-8">
-              <p className="section-label mb-2">Full Collection</p>
-              <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground mb-6">
-                {activeCategory === 'all' ? 'All Shaders' : CATEGORIES.find(c => c.id === activeCategory)?.label}
-                <span className="text-muted-foreground font-normal text-lg ml-3">({filteredShaders.length})</span>
-              </h2>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+                <div>
+                  <p className="section-label mb-2">Full Collection</p>
+                  <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground">
+                    {activeCategory === 'all' ? 'All Shaders' : CATEGORIES.find(c => c.id === activeCategory)?.label}
+                    <span className="text-muted-foreground font-normal text-lg ml-3">({filteredShaders.length})</span>
+                  </h2>
+                </div>
+                <div className="relative sm:ml-auto w-full sm:w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    placeholder="Search shaders..."
+                    className="w-full pl-9 pr-9 py-2.5 rounded-lg border border-border bg-background/60 backdrop-blur-sm font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition-all"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => handleSearch('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map(cat => (
                   <button
