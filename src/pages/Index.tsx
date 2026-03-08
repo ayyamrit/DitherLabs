@@ -38,7 +38,7 @@ const Index = () => {
   const [activeCategory, setActiveCategory] = useState('all');
   const [previewShader, setPreviewShader] = useState<DitherShaderDef | null>(null);
   const [showGuide, setShowGuide] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const [currentPage, setCurrentPage] = useState(0);
   const [bgShaderIndex, setBgShaderIndex] = useState(0);
 
   const bgShaders = useMemo(() =>
@@ -59,12 +59,14 @@ const Index = () => {
     );
   }, [activeCategory]);
 
-  const displayedShaders = useMemo(() => filteredShaders.slice(0, visibleCount), [filteredShaders, visibleCount]);
-  const hasMore = visibleCount < filteredShaders.length;
+  const totalPages = Math.ceil(filteredShaders.length / ITEMS_PER_PAGE);
+  const displayedShaders = useMemo(() => filteredShaders.slice(currentPage * ITEMS_PER_PAGE, (currentPage + 1) * ITEMS_PER_PAGE), [filteredShaders, currentPage]);
+  const hasMore = currentPage < totalPages - 1;
+  const hasPrev = currentPage > 0;
 
   const handleCategoryChange = useCallback((cat: string) => {
     setActiveCategory(cat);
-    setVisibleCount(ITEMS_PER_PAGE);
+    setCurrentPage(0);
   }, []);
 
   const handlePreview = useCallback((shader: DitherShaderDef) => {
@@ -75,8 +77,14 @@ const Index = () => {
     setPreviewShader(null);
   }, []);
 
-  const handleLoadMore = useCallback(() => {
-    setVisibleCount(prev => prev + ITEMS_PER_PAGE);
+  const handleNextPage = useCallback(() => {
+    setCurrentPage(prev => prev + 1);
+    document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  const handlePrevPage = useCallback(() => {
+    setCurrentPage(prev => Math.max(0, prev - 1));
+    document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   const nextBgShader = useCallback(() => {
@@ -245,16 +253,27 @@ const Index = () => {
               ))}
             </div>
 
-            {hasMore && (
-              <div className="flex justify-center mt-10">
+            <div className="flex items-center justify-center gap-4 mt-10">
+              {hasPrev && (
                 <button
-                  onClick={handleLoadMore}
-                  className="font-mono text-sm px-8 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
+                  onClick={handlePrevPage}
+                  className="font-mono text-sm px-6 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
                 >
-                  Load More ({filteredShaders.length - visibleCount} remaining)
+                  ← Previous
                 </button>
-              </div>
-            )}
+              )}
+              <span className="font-mono text-xs text-muted-foreground">
+                Page {currentPage + 1} of {totalPages}
+              </span>
+              {hasMore && (
+                <button
+                  onClick={handleNextPage}
+                  className="font-mono text-sm px-6 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
+                >
+                  Next →
+                </button>
+              )}
+            </div>
           </div>
         </section>
 
