@@ -36,6 +36,23 @@ export function useWebGLShader({ fragmentShader, active = true, onCompileError }
   const [ready, setReady] = useState(false);
   const [compileFailed, setCompileFailed] = useState(false);
 
+  const destroyGL = useCallback((loseContext: boolean) => {
+    cancelAnimationFrame(animFrameRef.current);
+    const gl = glRef.current;
+    if (gl) {
+      if (programRef.current) gl.deleteProgram(programRef.current);
+      if (bufferRef.current) gl.deleteBuffer(bufferRef.current);
+      if (loseContext) {
+        const ext = gl.getExtension('WEBGL_lose_context');
+        if (ext) ext.loseContext();
+      }
+    }
+    glRef.current = null;
+    programRef.current = null;
+    bufferRef.current = null;
+    setReady(false);
+  }, []);
+
   const ensureCanvasSize = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
