@@ -543,6 +543,257 @@ const MATRIX_RAIN: DitherShaderDef = {
   `,
 };
 
+const PLASMA_DITHER: DitherShaderDef = {
+  id: 'plasma',
+  name: 'Plasma Burn',
+  description: 'Retro demoscene-inspired plasma effect with multi-frequency sine waves dithered through a threshold grid.',
+  tags: ['demoscene', 'retro', 'colorful'],
+  featured: true,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    float bayer4(vec2 p) {
+      vec2 i = floor(mod(p, 4.0));
+      int x = int(i.x);
+      int y = int(i.y);
+      float m[16];
+      m[0]=0.0; m[1]=8.0; m[2]=2.0; m[3]=10.0;
+      m[4]=12.0; m[5]=4.0; m[6]=14.0; m[7]=6.0;
+      m[8]=3.0; m[9]=11.0; m[10]=1.0; m[11]=9.0;
+      m[12]=15.0; m[13]=7.0; m[14]=13.0; m[15]=5.0;
+      int idx = y * 4 + x;
+      for(int k = 0; k < 16; k++) {
+        if(k == idx) return m[k] / 16.0;
+      }
+      return 0.0;
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float t = u_time;
+      float v1 = sin(uv.x * 10.0 + t);
+      float v2 = sin(uv.y * 8.0 - t * 0.7);
+      float v3 = sin((uv.x + uv.y) * 6.0 + t * 0.5);
+      float v4 = sin(length(uv - u_mouse) * 12.0 - t * 2.0);
+      float val = (v1 + v2 + v3 + v4) / 4.0 * 0.5 + 0.5;
+      float threshold = bayer4(gl_FragCoord.xy);
+      float r = step(threshold, val);
+      float g = step(threshold, val * 0.7 + 0.15);
+      float b = step(threshold, val * 0.5 + 0.3);
+      gl_FragColor = vec4(r * 0.9, g * 0.4, b * 0.8, 1.0);
+    }
+  `,
+};
+
+const HEXAGONAL_DITHER: DitherShaderDef = {
+  id: 'hexagonal',
+  name: 'Hex Grid',
+  description: 'Hexagonal tile-based dithering with honeycomb geometry. Each hex cell carries its own threshold value.',
+  tags: ['geometric', 'hex', 'tiled'],
+  featured: false,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    vec2 hexCenter(vec2 p) {
+      float s = 12.0;
+      vec2 a = mod(p, vec2(s * 1.732, s * 3.0));
+      vec2 b = mod(p - vec2(s * 0.866, s * 1.5), vec2(s * 1.732, s * 3.0));
+      float da = length(a - vec2(s * 0.866, s * 1.5));
+      float db = length(b - vec2(s * 0.866, s * 1.5));
+      return da < db ? a : b;
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      vec2 hex = hexCenter(gl_FragCoord.xy);
+      float dist = length(uv - u_mouse);
+      float val = sin(dist * 15.0 - u_time * 2.5) * 0.5 + 0.5;
+      val = mix(val, 1.0 - length(uv - 0.5) * 1.2, 0.3);
+      float hexDist = length(hex - vec2(6.0));
+      float col = step(hexDist * 0.08, val);
+      vec3 c1 = vec3(1.0, 0.7, 0.0);
+      vec3 c2 = vec3(0.05, 0.03, 0.0);
+      gl_FragColor = vec4(mix(c2, c1, col), 1.0);
+    }
+  `,
+};
+
+const RADIAL_DITHER: DitherShaderDef = {
+  id: 'radial',
+  name: 'Radial Burst',
+  description: 'Concentric ring dithering radiating from the cursor position. Creates radar-like scanning patterns.',
+  tags: ['radial', 'radar', 'rings'],
+  featured: false,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float dist = length(uv - u_mouse);
+      float rings = sin(dist * 60.0 - u_time * 4.0) * 0.5 + 0.5;
+      float fade = exp(-dist * 3.0);
+      float val = rings * fade;
+      vec2 p = floor(gl_FragCoord.xy / 2.0);
+      float pattern = fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+      float col = step(pattern * 0.6, val);
+      vec3 c1 = vec3(0.0, 0.8, 1.0);
+      vec3 c2 = vec3(0.0, 0.03, 0.06);
+      gl_FragColor = vec4(mix(c2, c1, col), 1.0);
+    }
+  `,
+};
+
+const GRAIN_DITHER: DitherShaderDef = {
+  id: 'grain',
+  name: 'Film Grain',
+  description: 'Photographic film grain simulation with temporal noise and exposure-dependent grain density.',
+  tags: ['film', 'analog', 'grain'],
+  featured: false,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float dist = length(uv - u_mouse);
+      float light = sin(dist * 8.0 - u_time * 1.5) * 0.3 + 0.5;
+      light = mix(light, 1.0 - length(uv - 0.5) * 1.0, 0.5);
+      
+      // Multi-scale grain
+      float grain1 = hash(gl_FragCoord.xy + floor(u_time * 24.0) * 0.1) * 0.4;
+      float grain2 = hash(gl_FragCoord.xy * 0.5 + floor(u_time * 12.0) * 0.2) * 0.3;
+      float grain3 = hash(gl_FragCoord.xy * 2.0 + floor(u_time * 6.0) * 0.3) * 0.3;
+      float grain = grain1 + grain2 + grain3;
+      
+      // Grain is more visible in midtones
+      float grainStrength = 1.0 - abs(light - 0.5) * 2.0;
+      float val = light + (grain - 0.5) * grainStrength * 0.5;
+      
+      float col = step(0.5, val);
+      vec3 warm = vec3(0.95, 0.9, 0.8);
+      vec3 dark = vec3(0.12, 0.1, 0.08);
+      gl_FragColor = vec4(mix(dark, warm, col), 1.0);
+    }
+  `,
+};
+
+const CIRCUIT_DITHER: DitherShaderDef = {
+  id: 'circuit',
+  name: 'Circuit Board',
+  description: 'PCB-inspired dithering with orthogonal line patterns mimicking electronic circuit traces.',
+  tags: ['tech', 'circuit', 'digital'],
+  featured: false,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    float hash(vec2 p) {
+      return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      float cellSize = 16.0;
+      vec2 cell = floor(gl_FragCoord.xy / cellSize);
+      vec2 local = mod(gl_FragCoord.xy, cellSize) / cellSize;
+      
+      float h = hash(cell);
+      float dist = length(uv - u_mouse);
+      float energy = sin(dist * 12.0 - u_time * 3.0) * 0.5 + 0.5;
+      energy = mix(energy, 1.0 - dist, 0.3);
+      
+      float trace = 0.0;
+      // Horizontal or vertical trace based on hash
+      if(h > 0.5) {
+        trace = step(abs(local.y - 0.5), 0.08);
+      } else {
+        trace = step(abs(local.x - 0.5), 0.08);
+      }
+      // Junction dots
+      float dot = step(length(local - 0.5), 0.12);
+      float pattern = max(trace, dot) * step(0.3, energy);
+      
+      // Pad areas
+      float pad = step(length(local - 0.5), 0.25) * step(0.7, h + energy * 0.3);
+      pattern = max(pattern, pad * 0.6);
+      
+      vec3 boardColor = vec3(0.0, 0.15, 0.08);
+      vec3 traceColor = vec3(0.0, 0.9, 0.4);
+      gl_FragColor = vec4(mix(boardColor, traceColor, pattern), 1.0);
+    }
+  `,
+};
+
+const WARP_DITHER: DitherShaderDef = {
+  id: 'warp',
+  name: 'Space Warp',
+  description: 'Gravity-warped dithering field with distorted space-time. The cursor acts as a gravitational lens.',
+  tags: ['space', 'warp', 'distortion'],
+  featured: true,
+  fragmentShader: `
+    precision mediump float;
+    uniform float u_time;
+    uniform vec2 u_resolution;
+    uniform vec2 u_mouse;
+
+    float bayer4(vec2 p) {
+      vec2 i = floor(mod(p, 4.0));
+      int x = int(i.x);
+      int y = int(i.y);
+      float m[16];
+      m[0]=0.0; m[1]=8.0; m[2]=2.0; m[3]=10.0;
+      m[4]=12.0; m[5]=4.0; m[6]=14.0; m[7]=6.0;
+      m[8]=3.0; m[9]=11.0; m[10]=1.0; m[11]=9.0;
+      m[12]=15.0; m[13]=7.0; m[14]=13.0; m[15]=5.0;
+      int idx = y * 4 + x;
+      for(int k = 0; k < 16; k++) {
+        if(k == idx) return m[k] / 16.0;
+      }
+      return 0.0;
+    }
+
+    void main() {
+      vec2 uv = gl_FragCoord.xy / u_resolution;
+      vec2 d = uv - u_mouse;
+      float dist = length(d);
+      // Gravitational lens distortion
+      float warpStrength = 0.05 / (dist + 0.05);
+      vec2 warped = uv + d * warpStrength * 0.3;
+      
+      float t = u_time;
+      float v = sin(warped.x * 15.0 + t) * sin(warped.y * 15.0 - t * 0.8);
+      v = v * 0.5 + 0.5;
+      v += sin(dist * 20.0 - t * 3.0) * 0.2;
+      
+      float threshold = bayer4(gl_FragCoord.xy);
+      float col = step(threshold, v);
+      
+      vec3 c1 = vec3(0.7, 0.5, 1.0);
+      vec3 c2 = vec3(0.02, 0.0, 0.06);
+      vec3 c3 = vec3(1.0, 0.3, 0.6);
+      float colorMix = sin(dist * 10.0 + t) * 0.5 + 0.5;
+      gl_FragColor = vec4(mix(c2, mix(c1, c3, colorMix), col), 1.0);
+    }
+  `,
+};
+
 export const ALL_SHADERS: DitherShaderDef[] = [
   BAYER_DITHER,
   HALFTONE_DITHER,
@@ -551,11 +802,17 @@ export const ALL_SHADERS: DitherShaderDef[] = [
   BLUE_NOISE_DITHER,
   SPIRAL_DITHER,
   WAVE_DITHER,
+  PLASMA_DITHER,
+  WARP_DITHER,
   STIPPLE_DITHER,
   CHECKERBOARD_DITHER,
   VORONOI_DITHER,
   SCANLINE_DITHER,
   DIAMOND_DITHER,
+  HEXAGONAL_DITHER,
+  RADIAL_DITHER,
+  GRAIN_DITHER,
+  CIRCUIT_DITHER,
   PIXEL_SORT_DITHER,
   ERROR_DIFFUSION,
   MATRIX_RAIN,
