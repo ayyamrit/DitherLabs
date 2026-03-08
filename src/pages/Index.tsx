@@ -3,7 +3,7 @@ import ShaderCard from '@/components/ShaderCard';
 import ShaderPreviewModal from '@/components/ShaderPreviewModal';
 import UsageGuide from '@/components/UsageGuide';
 import ShaderCanvas from '@/components/ShaderCanvas';
-import { ALL_SHADERS, type DitherShaderDef } from '@/shaders/ditherShaders';
+import { ALL_SHADERS, FEATURED_SHADERS, type DitherShaderDef } from '@/shaders/ditherShaders';
 import { ChevronLeft, ChevronRight, Shuffle, Maximize2 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -23,6 +23,7 @@ const CATEGORIES = [
   { id: 'mechanical', label: 'Mechanical' },
   { id: 'landscape', label: 'Landscape' },
   { id: 'psychedelic', label: 'Psychedelic' },
+  { id: 'lowpoly', label: 'Low Poly' },
 ];
 
 const ITEMS_PER_PAGE = 24;
@@ -47,7 +48,9 @@ const Index = () => {
     []
   );
 
-  const currentBgShader = bgShaders[bgShaderIndex] ?? ALL_SHADERS[0];
+  const bestShaders = useMemo(() => FEATURED_SHADERS.slice(0, 10), []);
+
+  const currentBgShader = useMemo(() => bgShaders[bgShaderIndex] ?? ALL_SHADERS[0], [bgShaders, bgShaderIndex]);
 
   const filteredShaders = useMemo(() => {
     if (activeCategory === 'all') return ALL_SHADERS;
@@ -56,13 +59,25 @@ const Index = () => {
     );
   }, [activeCategory]);
 
-  const displayedShaders = filteredShaders.slice(0, visibleCount);
+  const displayedShaders = useMemo(() => filteredShaders.slice(0, visibleCount), [filteredShaders, visibleCount]);
   const hasMore = visibleCount < filteredShaders.length;
 
-  const handleCategoryChange = (cat: string) => {
+  const handleCategoryChange = useCallback((cat: string) => {
     setActiveCategory(cat);
     setVisibleCount(ITEMS_PER_PAGE);
-  };
+  }, []);
+
+  const handlePreview = useCallback((shader: DitherShaderDef) => {
+    setPreviewShader(shader);
+  }, []);
+
+  const handleClosePreview = useCallback(() => {
+    setPreviewShader(null);
+  }, []);
+
+  const handleLoadMore = useCallback(() => {
+    setVisibleCount(prev => prev + ITEMS_PER_PAGE);
+  }, []);
 
   const nextBgShader = useCallback(() => {
     if (!bgShaders.length) return;
@@ -79,6 +94,8 @@ const Index = () => {
     setBgShaderIndex(Math.floor(Math.random() * bgShaders.length));
   }, [bgShaders.length]);
 
+  const toggleGuide = useCallback(() => setShowGuide(prev => !prev), []);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -92,7 +109,7 @@ const Index = () => {
           </div>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setShowGuide(!showGuide)}
+              onClick={toggleGuide}
               className="font-mono text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
             >
               {showGuide ? 'Hide Guide' : 'Usage Guide'}
@@ -106,14 +123,12 @@ const Index = () => {
 
       {/* Hero Section */}
       <section className="relative py-16 sm:py-24 overflow-hidden">
-        {/* Subtle background glow */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-[120px]" />
           <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full bg-accent/5 blur-[100px]" />
         </div>
 
         <div className="container relative z-10">
-          {/* Liquid Glass Title */}
           <div className="text-center mb-10">
             <p className="section-label mb-4">WebGL Shader Collection</p>
             <h1 className="font-display font-bold text-5xl sm:text-7xl md:text-8xl tracking-tight mb-6 leading-[0.9]">
@@ -129,7 +144,6 @@ const Index = () => {
           {/* Centered Shader Preview Window */}
           <div className="max-w-3xl mx-auto">
             <div className="relative rounded-2xl border border-border overflow-hidden shadow-2xl bg-card hero-shader-window">
-              {/* Window chrome bar */}
               <div className="flex items-center justify-between px-4 py-2.5 border-b border-border bg-card/90 backdrop-blur-sm">
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1.5">
@@ -141,18 +155,15 @@ const Index = () => {
                     {currentBgShader.name}
                   </span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => setPreviewShader(currentBgShader)}
-                    className="p-1.5 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
-                    title="Fullscreen preview"
-                  >
-                    <Maximize2 size={14} />
-                  </button>
-                </div>
+                <button
+                  onClick={() => handlePreview(currentBgShader)}
+                  className="p-1.5 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground"
+                  title="Fullscreen preview"
+                >
+                  <Maximize2 size={14} />
+                </button>
               </div>
 
-              {/* Shader render area */}
               <div className="aspect-video w-full relative bg-background">
                 <ShaderCanvas
                   key={currentBgShader.id}
@@ -165,7 +176,6 @@ const Index = () => {
                 />
               </div>
 
-              {/* Controls bar */}
               <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-card/90 backdrop-blur-sm">
                 <div className="flex items-center gap-1">
                   <button onClick={prevBgShader} className="p-1.5 rounded-md hover:bg-secondary transition-colors text-muted-foreground hover:text-foreground" title="Previous">
@@ -190,10 +200,9 @@ const Index = () => {
             </div>
           </div>
 
-          {/* Scroll CTA */}
           <div className="text-center mt-10">
             <button
-              onClick={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
+              onClick={() => document.getElementById('best')?.scrollIntoView({ behavior: 'smooth' })}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-display font-semibold text-sm hover:opacity-90 transition-opacity"
             >
               Browse Collection
@@ -203,14 +212,35 @@ const Index = () => {
         </div>
       </section>
 
+      {/* ✨ Preview Best Shaders Section */}
+      <section id="best" className="border-t border-border">
+        <div className="container py-20">
+          <div className="mb-8">
+            <p className="section-label mb-2">Handpicked</p>
+            <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground mb-3">
+              Best Shaders
+              <span className="text-muted-foreground font-normal text-lg ml-3">({bestShaders.length})</span>
+            </h2>
+            <p className="font-display text-sm text-muted-foreground max-w-lg">
+              Our top picks — the most visually striking and technically impressive shaders in the collection.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {bestShaders.map((shader) => (
+              <ShaderCard key={shader.id} shader={shader} onPreview={handlePreview} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Usage Guide */}
       {showGuide && <UsageGuide />}
 
-      {/* Gallery */}
+      {/* Full Gallery */}
       <section id="gallery" className="border-t border-border">
         <div className="container py-20">
           <div className="mb-8">
-            <p className="section-label mb-2">Collection</p>
+            <p className="section-label mb-2">Full Collection</p>
             <h2 className="font-display font-bold text-3xl sm:text-4xl text-foreground mb-6">
               {activeCategory === 'all' ? 'All Shaders' : CATEGORIES.find(c => c.id === activeCategory)?.label}
               <span className="text-muted-foreground font-normal text-lg ml-3">({filteredShaders.length})</span>
@@ -234,14 +264,14 @@ const Index = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {displayedShaders.map((shader) => (
-              <ShaderCard key={shader.id} shader={shader} onPreview={setPreviewShader} />
+              <ShaderCard key={shader.id} shader={shader} onPreview={handlePreview} />
             ))}
           </div>
 
           {hasMore && (
             <div className="flex justify-center mt-10">
               <button
-                onClick={() => setVisibleCount(prev => prev + ITEMS_PER_PAGE)}
+                onClick={handleLoadMore}
                 className="font-mono text-sm px-8 py-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 transition-all bg-background/50"
               >
                 Load More ({filteredShaders.length - visibleCount} remaining)
@@ -279,7 +309,7 @@ const Index = () => {
       </footer>
 
       {previewShader && (
-        <ShaderPreviewModal shader={previewShader} onClose={() => setPreviewShader(null)} />
+        <ShaderPreviewModal shader={previewShader} onClose={handleClosePreview} />
       )}
     </div>
   );

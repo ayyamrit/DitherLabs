@@ -13,7 +13,6 @@ const DEFAULT_VERTEX = `
   }
 `;
 
-// Fallback shader shown when compilation fails
 const FALLBACK_FRAGMENT = `
   precision mediump float;
   uniform float u_time;
@@ -33,21 +32,21 @@ export function useWebGLShader({ fragmentShader, active = true, onCompileError }
   const animFrameRef = useRef<number>(0);
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
   const startTimeRef = useRef(Date.now());
+  const lastShaderRef = useRef('');
   const [ready, setReady] = useState(false);
   const [compileFailed, setCompileFailed] = useState(false);
-  const currentShaderRef = useRef(fragmentShader);
 
   const ensureCanvasSize = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const cssWidth = canvas.clientWidth || canvas.width || 1;
-    const cssHeight = canvas.clientHeight || canvas.height || 1;
-    const displayWidth = Math.max(1, Math.floor(cssWidth * dpr));
-    const displayHeight = Math.max(1, Math.floor(cssHeight * dpr));
-    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
-      canvas.width = displayWidth;
-      canvas.height = displayHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const cssWidth = canvas.clientWidth || 1;
+    const cssHeight = canvas.clientHeight || 1;
+    const w = Math.max(1, Math.floor(cssWidth * dpr));
+    const h = Math.max(1, Math.floor(cssHeight * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
     }
   }, []);
 
@@ -58,7 +57,7 @@ export function useWebGLShader({ fragmentShader, active = true, onCompileError }
     const gl = canvas.getContext('webgl', {
       antialias: false,
       preserveDrawingBuffer: false,
-      alpha: true,
+      alpha: false,
       powerPreference: 'low-power',
     });
     if (!gl) return null;
@@ -66,132 +65,119 @@ export function useWebGLShader({ fragmentShader, active = true, onCompileError }
     return gl;
   }, []);
 
-  const compileProgram = useCallback((gl: WebGLRenderingContext, frag: string): WebGLProgram | null => {
-    const compile = (type: number, src: string) => {
-      const s = gl.createShader(type);
-      if (!s) return null;
-      gl.shaderSource(s, src);
-      gl.compileShader(s);
-      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-        const log = gl.getShaderInfoLog(s) || '';
-        gl.deleteShader(s);
-        return { error: log };
-      }
-      return s;
-    };
-
-    const vs = compile(gl.VERTEX_SHADER, DEFAULT_VERTEX);
-    if (!vs || 'error' in vs) return null;
-
-    const fs = compile(gl.FRAGMENT_SHADER, frag);
-    if (!fs || 'error' in fs) {
-      gl.deleteShader(vs as WebGLShader);
-      if (fs && 'error' in fs) {
-        onCompileError?.((fs as { error: string }).error);
-      }
+  const compileShaderSource = useCallback((gl: WebGLRenderingContext, type: number, src: string): WebGLShader | null => {
+    const s = gl.createShader(type);
+    if (!s) return null;
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+      const log = gl.getShaderInfoLog(s) || '';
+      gl.deleteShader(s);
+      if (type === gl.FRAGMENT_SHADER) onCompileError?.(log);
       return null;
     }
-
-    const program = gl.createProgram();
-    if (!program) {
-      gl.deleteShader(vs as WebGLShader);
-      gl.deleteShader(fs as WebGLShader);
-      return null;
-    }
-
-    gl.attachShader(program, vs as WebGLShader);
-    gl.attachShader(program, fs as WebGLShader);
-    gl.linkProgram(program);
-    gl.deleteShader(vs as WebGLShader);
-    gl.deleteShader(fs as WebGLShader);
-
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      gl.deleteProgram(program);
-      return null;
-    }
-    return program;
+    return s;
   }, [onCompileError]);
 
+  const buildProgram = useCallback((gl: WebGLRenderingContext, frag: string): WebGLProgram | null => {
+    const vs = compileShaderSource(gl, gl.VERTEX_SHADER, DEFAULT_VERTEX);
+    if (!vs) return null;
+    const fs = compileShaderSource(gl, gl.FRAGMENT_SHADER, frag);
+    if (!fs) { gl.deleteShader(vs); return null; }
+    const prog = gl.createProgram();
+    if (!prog) { gl.deleteShader(vs); gl.deleteShader(fs); return null; }
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) { gl.deleteProgram(prog); return null; }
+    return prog;
+  }, [compileShaderSource]);
+
   const setupProgram = useCallback(() => {
+    // Skip if same shader already compiled
+    if (lastShaderRef.current === fragmentShader && programRef.current && glRef.current && !glRef.current.isContextLost()) {
+      setReady(true);
+      return;
+    }
+
     const gl = initContext();
     if (!gl) { setReady(false); return; }
     ensureCanvasSize();
 
-    // Try compiling the requested shader
-    let nextProgram = compileProgram(gl, fragmentShader);
-    
-    if (!nextProgram) {
-      // Fallback: compile a safe shader so the canvas isn't blank
+    let prog = buildProgram(gl, fragmentShader);
+    if (!prog) {
       setCompileFailed(true);
-      nextProgram = compileProgram(gl, FALLBACK_FRAGMENT);
-      if (!nextProgram) { setReady(false); return; }
+      prog = buildProgram(gl, FALLBACK_FRAGMENT);
+      if (!prog) { setReady(false); return; }
     } else {
       setCompileFailed(false);
     }
 
     if (programRef.current) gl.deleteProgram(programRef.current);
-    programRef.current = nextProgram;
-    gl.useProgram(nextProgram);
+    programRef.current = prog;
+    lastShaderRef.current = fragmentShader;
+    gl.useProgram(prog);
 
     if (!bufferRef.current) {
-      const buffer = gl.createBuffer();
-      if (buffer) {
-        bufferRef.current = buffer;
-        gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      const buf = gl.createBuffer();
+      if (buf) {
+        bufferRef.current = buf;
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
       }
     } else {
       gl.bindBuffer(gl.ARRAY_BUFFER, bufferRef.current);
     }
 
-    const posLoc = gl.getAttribLocation(nextProgram, 'a_position');
-    if (posLoc !== -1) {
-      gl.enableVertexAttribArray(posLoc);
-      gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+    const pos = gl.getAttribLocation(prog, 'a_position');
+    if (pos !== -1) {
+      gl.enableVertexAttribArray(pos);
+      gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
     }
 
     startTimeRef.current = Date.now();
     setReady(true);
-  }, [compileProgram, ensureCanvasSize, fragmentShader, initContext]);
+  }, [buildProgram, ensureCanvasSize, fragmentShader, initContext]);
 
   const renderFrame = useCallback(() => {
     const gl = glRef.current;
-    const program = programRef.current;
+    const prog = programRef.current;
     const canvas = canvasRef.current;
-    if (!gl || !program || !canvas || gl.isContextLost()) return;
+    if (!gl || !prog || !canvas || gl.isContextLost()) return;
     ensureCanvasSize();
     gl.viewport(0, 0, canvas.width, canvas.height);
     gl.clearColor(0, 0, 0, 1);
     gl.clear(gl.COLOR_BUFFER_BIT);
-
-    const timeLoc = gl.getUniformLocation(program, 'u_time');
-    const resLoc = gl.getUniformLocation(program, 'u_resolution');
-    const mouseLoc = gl.getUniformLocation(program, 'u_mouse');
-    if (timeLoc !== null) gl.uniform1f(timeLoc, (Date.now() - startTimeRef.current) / 1000.0);
-    if (resLoc !== null) gl.uniform2f(resLoc, canvas.width, canvas.height);
-    if (mouseLoc !== null) gl.uniform2f(mouseLoc, mouseRef.current.x, mouseRef.current.y);
+    const t = gl.getUniformLocation(prog, 'u_time');
+    const r = gl.getUniformLocation(prog, 'u_resolution');
+    const m = gl.getUniformLocation(prog, 'u_mouse');
+    if (t !== null) gl.uniform1f(t, (Date.now() - startTimeRef.current) / 1000.0);
+    if (r !== null) gl.uniform2f(r, canvas.width, canvas.height);
+    if (m !== null) gl.uniform2f(m, mouseRef.current.x, mouseRef.current.y);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }, [ensureCanvasSize]);
 
-  // Recompile when shader source changes
   useEffect(() => {
     if (!active) return;
-    currentShaderRef.current = fragmentShader;
     setupProgram();
   }, [active, fragmentShader, setupProgram]);
 
-  // Context lost/restored
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const onLost = (e: Event) => { e.preventDefault(); setReady(false); cancelAnimationFrame(animFrameRef.current); };
-    const onRestored = () => { glRef.current = null; programRef.current = null; bufferRef.current = null; if (active) setupProgram(); };
+    const onRestored = () => {
+      glRef.current = null; programRef.current = null; bufferRef.current = null;
+      lastShaderRef.current = '';
+      if (active) setupProgram();
+    };
     canvas.addEventListener('webglcontextlost', onLost);
     canvas.addEventListener('webglcontextrestored', onRestored);
     return () => { canvas.removeEventListener('webglcontextlost', onLost); canvas.removeEventListener('webglcontextrestored', onRestored); };
   }, [active, setupProgram]);
 
-  // Render loop
   useEffect(() => {
     if (!active) { cancelAnimationFrame(animFrameRef.current); return; }
     const loop = () => { renderFrame(); animFrameRef.current = requestAnimationFrame(loop); };
@@ -199,7 +185,6 @@ export function useWebGLShader({ fragmentShader, active = true, onCompileError }
     return () => cancelAnimationFrame(animFrameRef.current);
   }, [active, renderFrame]);
 
-  // Cleanup
   useEffect(() => {
     return () => {
       cancelAnimationFrame(animFrameRef.current);

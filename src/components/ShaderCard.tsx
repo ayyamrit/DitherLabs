@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useCallback } from 'react';
 import ShaderCanvas from './ShaderCanvas';
 import type { DitherShaderDef } from '@/shaders/ditherShaders';
 import { Maximize2 } from 'lucide-react';
@@ -9,14 +9,16 @@ interface ShaderCardProps {
 }
 
 const ShaderCard = memo(({ shader, onPreview }: ShaderCardProps) => {
+  const handlePreview = useCallback(() => onPreview(shader), [shader, onPreview]);
+
   return (
     <div className="shader-card group">
       <div className="relative aspect-square">
-        <ShaderCanvas shader={shader} resolution={300} />
+        <ShaderCanvas shader={shader} resolution={256} />
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
         <button
-          onClick={() => onPreview(shader)}
+          onClick={handlePreview}
           className="absolute top-3 right-3 p-2 rounded-lg bg-background/70 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground hover:bg-background/90 opacity-0 group-hover:opacity-100 transition-all duration-200"
         >
           <Maximize2 size={16} />
@@ -32,7 +34,7 @@ const ShaderCard = memo(({ shader, onPreview }: ShaderCardProps) => {
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-display font-semibold text-foreground">{shader.name}</h3>
           <button
-            onClick={() => onPreview(shader)}
+            onClick={handlePreview}
             className="font-mono text-[10px] text-primary hover:underline cursor-pointer"
           >
             Preview ↗
@@ -46,7 +48,7 @@ const ShaderCard = memo(({ shader, onPreview }: ShaderCardProps) => {
       </div>
     </div>
   );
-});
+}, (prev, next) => prev.shader.id === next.shader.id && prev.onPreview === next.onPreview);
 
 ShaderCard.displayName = 'ShaderCard';
 export default ShaderCard;
