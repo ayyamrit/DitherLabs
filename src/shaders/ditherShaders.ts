@@ -36,6 +36,8 @@ import { shaderPackNightCity2 } from './shaderPackNightCity2';
 import { shaderPackCarRide } from './shaderPackCarRide';
 import { shaderPackBeach } from './shaderPackBeach';
 import { shaderPack3DExtra } from './shaderPack3DExtra';
+import { shaderPack31 } from './shaderPack31';
+import { shaderPack32 } from './shaderPack32';
 
 export interface DitherShaderDef {
   id: string;
@@ -1094,6 +1096,8 @@ export const ALL_SHADERS: DitherShaderDef[] = [
   ...shaderPackCarRide,
   ...shaderPackBeach,
   ...shaderPack3DExtra,
+  ...shaderPack31,
+  ...shaderPack32,
 ];
 
 export const FEATURED_SHADERS = ALL_SHADERS.filter(s => s.featured);
