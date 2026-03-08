@@ -30,6 +30,7 @@ import { shaderPack27 } from './shaderPack27';
 import { shaderPack28 } from './shaderPack28';
 import { shaderPack29 } from './shaderPack29';
 import { shaderPack30 } from './shaderPack30';
+import { shaderPackNightCity } from './shaderPackNightCity';
 
 export interface DitherShaderDef {
   id: string;
