@@ -1001,7 +1001,7 @@ const SCANLINE: DitherShaderDef = {
   `,
 };
 
-export const ALL_SHADERS: DitherShaderDef[] = [
+const BASE_SHADERS: DitherShaderDef[] = [
   BAYER_DITHER,
   HALFTONE_CMYK,
   TERRAIN_CONTOUR,
@@ -1020,6 +1020,14 @@ export const ALL_SHADERS: DitherShaderDef[] = [
   REACTION_DIFFUSION,
   MATRIX_RAIN,
   SCANLINE,
+];
+
+export const ALL_SHADERS: DitherShaderDef[] = [
+  ...BASE_SHADERS,
+  ...shaderPack2,
+  ...shaderPack3,
+  ...shaderPack4,
+  ...shaderPack5,
 ];
 
 export const FEATURED_SHADERS = ALL_SHADERS.filter(s => s.featured);
