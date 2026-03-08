@@ -39,12 +39,20 @@ export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShader
   }, []);
 
   const initContext = useCallback(() => {
-    if (glRef.current) return glRef.current;
-
     const canvas = canvasRef.current;
     if (!canvas) return null;
 
-    const gl = canvas.getContext('webgl', { antialias: false, preserveDrawingBuffer: false });
+    if (glRef.current && !glRef.current.isContextLost()) {
+      return glRef.current;
+    }
+
+    const gl = canvas.getContext('webgl', {
+      antialias: false,
+      preserveDrawingBuffer: false,
+      alpha: true,
+      powerPreference: 'high-performance',
+    });
+
     if (!gl) {
       console.error('WebGL not supported');
       return null;
@@ -55,27 +63,29 @@ export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShader
   }, []);
 
   const compileProgram = useCallback((gl: WebGLRenderingContext, nextFragmentShader: string) => {
-    const vs = gl.createShader(gl.VERTEX_SHADER);
-    if (!vs) return null;
-    gl.shaderSource(vs, DEFAULT_VERTEX);
-    gl.compileShader(vs);
-    if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
-      console.error('Vertex shader error:', gl.getShaderInfoLog(vs));
-      gl.deleteShader(vs);
-      return null;
-    }
+    const compileShader = (type: number, source: string, label: string) => {
+      const shader = gl.createShader(type);
+      if (!shader) return null;
 
-    const fs = gl.createShader(gl.FRAGMENT_SHADER);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        const message = gl.getShaderInfoLog(shader) || `${label} shader compilation failed.`;
+        console.error(`${label} shader error:`, message);
+        gl.deleteShader(shader);
+        return null;
+      }
+
+      return shader;
+    };
+
+    const vs = compileShader(gl.VERTEX_SHADER, DEFAULT_VERTEX, 'Vertex');
+    if (!vs) return null;
+
+    const fs = compileShader(gl.FRAGMENT_SHADER, nextFragmentShader, 'Fragment');
     if (!fs) {
       gl.deleteShader(vs);
-      return null;
-    }
-    gl.shaderSource(fs, nextFragmentShader);
-    gl.compileShader(fs);
-    if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
-      console.error('Fragment shader error:', gl.getShaderInfoLog(fs));
-      gl.deleteShader(vs);
-      gl.deleteShader(fs);
       return null;
     }
 
@@ -113,7 +123,7 @@ export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShader
 
     const nextProgram = compileProgram(gl, fragmentShader);
     if (!nextProgram) {
-      setReady(false);
+      setReady(Boolean(programRef.current));
       return;
     }
 
@@ -149,7 +159,7 @@ export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShader
     const gl = glRef.current;
     const program = programRef.current;
     const canvas = canvasRef.current;
-    if (!gl || !program || !canvas) return;
+    if (!gl || !program || !canvas || gl.isContextLost()) return;
 
     ensureCanvasSize();
 
@@ -161,9 +171,9 @@ export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShader
     const resLoc = gl.getUniformLocation(program, 'u_resolution');
     const mouseLoc = gl.getUniformLocation(program, 'u_mouse');
 
-    if (timeLoc) gl.uniform1f(timeLoc, (Date.now() - startTimeRef.current) / 1000.0);
-    if (resLoc) gl.uniform2f(resLoc, canvas.width, canvas.height);
-    if (mouseLoc) gl.uniform2f(mouseLoc, mouseRef.current.x, mouseRef.current.y);
+    if (timeLoc !== null) gl.uniform1f(timeLoc, (Date.now() - startTimeRef.current) / 1000.0);
+    if (resLoc !== null) gl.uniform2f(resLoc, canvas.width, canvas.height);
+    if (mouseLoc !== null) gl.uniform2f(mouseLoc, mouseRef.current.x, mouseRef.current.y);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }, [ensureCanvasSize]);
@@ -171,6 +181,32 @@ export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShader
   useEffect(() => {
     if (!active) return;
     setupProgram();
+  }, [active, setupProgram]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const onContextLost = (event: Event) => {
+      event.preventDefault();
+      setReady(false);
+      cancelAnimationFrame(animFrameRef.current);
+    };
+
+    const onContextRestored = () => {
+      glRef.current = null;
+      programRef.current = null;
+      bufferRef.current = null;
+      if (active) setupProgram();
+    };
+
+    canvas.addEventListener('webglcontextlost', onContextLost);
+    canvas.addEventListener('webglcontextrestored', onContextRestored);
+
+    return () => {
+      canvas.removeEventListener('webglcontextlost', onContextLost);
+      canvas.removeEventListener('webglcontextrestored', onContextRestored);
+    };
   }, [active, setupProgram]);
 
   useEffect(() => {
@@ -216,6 +252,8 @@ export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShader
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
     mouseRef.current = {
       x: (e.clientX - rect.left) / rect.width,
       y: 1.0 - (e.clientY - rect.top) / rect.height,

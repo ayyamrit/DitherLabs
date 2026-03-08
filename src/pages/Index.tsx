@@ -98,6 +98,7 @@ const Index = () => {
         <ShaderCanvas
           shader={currentBgShader}
           active={true}
+          alwaysRender={true}
           resolution={1024}
           mouseEnabled={true}
           className="w-full h-full"
