@@ -1,10 +1,8 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 
 interface UseWebGLShaderOptions {
-  vertexShader?: string;
   fragmentShader: string;
-  width?: number;
-  height?: number;
+  active?: boolean;
 }
 
 const DEFAULT_VERTEX = `
@@ -14,30 +12,38 @@ const DEFAULT_VERTEX = `
   }
 `;
 
-export function useWebGLShader({ vertexShader, fragmentShader, width = 400, height = 400 }: UseWebGLShaderOptions) {
+export function useWebGLShader({ fragmentShader, active = true }: UseWebGLShaderOptions) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const glRef = useRef<WebGLRenderingContext | null>(null);
   const programRef = useRef<WebGLProgram | null>(null);
   const animFrameRef = useRef<number>(0);
   const mouseRef = useRef({ x: 0.5, y: 0.5 });
   const startTimeRef = useRef(Date.now());
+  const initializedRef = useRef(false);
+  const [ready, setReady] = useState(false);
 
   const initGL = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || initializedRef.current) return;
 
     const gl = canvas.getContext('webgl', { antialias: false, preserveDrawingBuffer: false });
-    if (!gl) return;
+    if (!gl) {
+      console.error('WebGL not supported');
+      return;
+    }
     glRef.current = gl;
 
     const vs = gl.createShader(gl.VERTEX_SHADER)!;
-    gl.shaderSource(vs, vertexShader || DEFAULT_VERTEX);
+    gl.shaderSource(vs, DEFAULT_VERTEX);
     gl.compileShader(vs);
+    if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+      console.error('Vertex shader error:', gl.getShaderInfoLog(vs));
+      return;
+    }
 
     const fs = gl.createShader(gl.FRAGMENT_SHADER)!;
     gl.shaderSource(fs, fragmentShader);
     gl.compileShader(fs);
-
     if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
       console.error('Fragment shader error:', gl.getShaderInfoLog(fs));
       return;
@@ -47,20 +53,28 @@ export function useWebGLShader({ vertexShader, fragmentShader, width = 400, heig
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
     gl.linkProgram(program);
+    
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program link error:', gl.getProgramInfoLog(program));
+      return;
+    }
+    
     programRef.current = program;
 
     const buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
 
     const posLoc = gl.getAttribLocation(program, 'a_position');
     gl.enableVertexAttribArray(posLoc);
     gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
     gl.useProgram(program);
-  }, [vertexShader, fragmentShader]);
+    initializedRef.current = true;
+    setReady(true);
+  }, [fragmentShader]);
 
-  const render = useCallback(() => {
+  const renderFrame = useCallback(() => {
     const gl = glRef.current;
     const program = programRef.current;
     const canvas = canvasRef.current;
@@ -79,14 +93,43 @@ export function useWebGLShader({ vertexShader, fragmentShader, width = 400, heig
     if (mouseLoc) gl.uniform2f(mouseLoc, mouseRef.current.x, mouseRef.current.y);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    animFrameRef.current = requestAnimationFrame(render);
   }, []);
 
   useEffect(() => {
+    if (!active) {
+      cancelAnimationFrame(animFrameRef.current);
+      return;
+    }
+
     initGL();
-    render();
-    return () => cancelAnimationFrame(animFrameRef.current);
-  }, [initGL, render]);
+
+    const loop = () => {
+      renderFrame();
+      animFrameRef.current = requestAnimationFrame(loop);
+    };
+    
+    // Small delay to ensure canvas is in DOM
+    const timeout = setTimeout(() => loop(), 50);
+    
+    return () => {
+      clearTimeout(timeout);
+      cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [active, initGL, renderFrame]);
+
+  // Cleanup GL on unmount
+  useEffect(() => {
+    return () => {
+      const gl = glRef.current;
+      if (gl) {
+        const ext = gl.getExtension('WEBGL_lose_context');
+        if (ext) ext.loseContext();
+      }
+      glRef.current = null;
+      programRef.current = null;
+      initializedRef.current = false;
+    };
+  }, []);
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -96,5 +139,5 @@ export function useWebGLShader({ vertexShader, fragmentShader, width = 400, heig
     };
   }, []);
 
-  return { canvasRef, handleMouseMove };
+  return { canvasRef, handleMouseMove, ready };
 }

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import ShaderCard from '@/components/ShaderCard';
 import HeroShader from '@/components/HeroShader';
-import { ALL_SHADERS, FEATURED_SHADERS } from '@/shaders/ditherShaders';
+import ShaderPreviewModal from '@/components/ShaderPreviewModal';
+import { ALL_SHADERS, FEATURED_SHADERS, type DitherShaderDef } from '@/shaders/ditherShaders';
 
 const Index = () => {
   const [showAll, setShowAll] = useState(false);
+  const [previewShader, setPreviewShader] = useState<DitherShaderDef | null>(null);
   const displayedShaders = showAll ? ALL_SHADERS : FEATURED_SHADERS;
 
   return (
@@ -22,14 +24,6 @@ const Index = () => {
             <span className="section-label hidden sm:block">
               {ALL_SHADERS.length} shaders
             </span>
-            <a
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-mono text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              source ↗
-            </a>
           </div>
         </div>
       </nav>
@@ -46,12 +40,10 @@ const Index = () => {
           </h1>
           <p className="font-display text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto mb-8 font-light">
             A curated collection of interactive WebGL dithering shaders.
-            Move your mouse to interact.
+            Hover to interact — click to preview fullscreen.
           </p>
           <button
-            onClick={() => {
-              document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' });
-            }}
+            onClick={() => document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-display font-semibold text-sm hover:opacity-90 transition-opacity"
           >
             Explore Shaders
@@ -79,7 +71,7 @@ const Index = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {displayedShaders.map((shader) => (
-            <ShaderCard key={shader.id} shader={shader} />
+            <ShaderCard key={shader.id} shader={shader} onPreview={setPreviewShader} />
           ))}
         </div>
       </section>
@@ -101,9 +93,9 @@ const Index = () => {
               </p>
             </div>
             <div>
-              <h3 className="font-display font-semibold text-foreground mb-3">Open Source</h3>
+              <h3 className="font-display font-semibold text-foreground mb-3">Copy & Use</h3>
               <p className="font-display text-sm text-muted-foreground leading-relaxed">
-                Every shader is freely available. Copy the GLSL code and use it in your own creative projects.
+                Click preview on any shader to see it fullscreen and copy the GLSL code for your own projects.
               </p>
             </div>
           </div>
@@ -121,6 +113,11 @@ const Index = () => {
           </span>
         </div>
       </footer>
+
+      {/* Preview Modal */}
+      {previewShader && (
+        <ShaderPreviewModal shader={previewShader} onClose={() => setPreviewShader(null)} />
+      )}
     </div>
   );
 };

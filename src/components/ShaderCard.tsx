@@ -1,17 +1,27 @@
 import ShaderCanvas from './ShaderCanvas';
 import type { DitherShaderDef } from '@/shaders/ditherShaders';
+import { Maximize2 } from 'lucide-react';
 
 interface ShaderCardProps {
   shader: DitherShaderDef;
-  size?: 'normal' | 'large';
+  onPreview: (shader: DitherShaderDef) => void;
 }
 
-const ShaderCard = ({ shader, size = 'normal' }: ShaderCardProps) => {
+const ShaderCard = ({ shader, onPreview }: ShaderCardProps) => {
   return (
-    <div className={`shader-card group cursor-pointer ${size === 'large' ? 'col-span-2 row-span-2' : ''}`}>
-      <div className={`relative ${size === 'large' ? 'aspect-square' : 'aspect-square'}`}>
+    <div className="shader-card group">
+      <div className="relative aspect-square">
         <ShaderCanvas shader={shader} />
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        
+        {/* Preview button */}
+        <button
+          onClick={() => onPreview(shader)}
+          className="absolute top-3 right-3 p-2 rounded-lg bg-background/70 backdrop-blur-sm border border-border text-muted-foreground hover:text-foreground hover:bg-background/90 opacity-0 group-hover:opacity-100 transition-all duration-200"
+        >
+          <Maximize2 size={16} />
+        </button>
+
         <div className="absolute bottom-0 left-0 right-0 p-4 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
           <p className="font-mono text-xs text-muted-foreground leading-relaxed line-clamp-2">
             {shader.description}
@@ -21,9 +31,12 @@ const ShaderCard = ({ shader, size = 'normal' }: ShaderCardProps) => {
       <div className="p-4 border-t border-border">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-display font-semibold text-foreground">{shader.name}</h3>
-          <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
-            #{shader.id}
-          </span>
+          <button
+            onClick={() => onPreview(shader)}
+            className="font-mono text-[10px] text-primary hover:underline cursor-pointer"
+          >
+            Preview ↗
+          </button>
         </div>
         <div className="flex gap-1.5 flex-wrap">
           {shader.tags.map(tag => (
