@@ -6,15 +6,16 @@ import { Maximize2 } from 'lucide-react';
 interface ShaderCardProps {
   shader: DitherShaderDef;
   onPreview: (shader: DitherShaderDef) => void;
+  active?: boolean;
 }
 
-const ShaderCard = memo(({ shader, onPreview }: ShaderCardProps) => {
+const ShaderCard = memo(({ shader, onPreview, active = true }: ShaderCardProps) => {
   const handlePreview = useCallback(() => onPreview(shader), [shader, onPreview]);
 
   return (
     <div className="shader-card group">
       <div className="relative aspect-square">
-        <ShaderCanvas shader={shader} resolution={256} />
+        <ShaderCanvas shader={shader} resolution={256} active={active} />
         <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
         <button
