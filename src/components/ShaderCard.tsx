@@ -49,7 +49,7 @@ const ShaderCard = memo(({ shader, onPreview, active = true }: ShaderCardProps) 
       </div>
     </div>
   );
-}, (prev, next) => prev.shader.id === next.shader.id && prev.onPreview === next.onPreview);
+}, (prev, next) => prev.shader.id === next.shader.id && prev.onPreview === next.onPreview && prev.active === next.active);
 
 ShaderCard.displayName = 'ShaderCard';
 export default ShaderCard;
