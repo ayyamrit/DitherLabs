@@ -1104,6 +1104,8 @@ export const ALL_SHADERS: DitherShaderDef[] = [
   ...shaderPack32,
   ...shaderPack33,
   ...shaderPackSky,
+  ...shaderPackPro1,
+  ...shaderPackPro2,
 ];
 
 export const FEATURED_SHADERS = ALL_SHADERS.filter(s => s.featured);
