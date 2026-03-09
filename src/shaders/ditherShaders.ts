@@ -46,6 +46,16 @@ import { shaderPackPro3 } from './shaderPackPro3';
 import { shaderPackPro4 } from './shaderPackPro4';
 import { shaderPackPro5 } from './shaderPackPro5';
 import { shaderPackPro6 } from './shaderPackPro6';
+import { shaderPack34 } from './shaderPack34';
+import { shaderPack35 } from './shaderPack35';
+import { shaderPack36 } from './shaderPack36';
+import { shaderPack37 } from './shaderPack37';
+import { shaderPack38 } from './shaderPack38';
+import { shaderPack39 } from './shaderPack39';
+import { shaderPack40 } from './shaderPack40';
+import { shaderPack41 } from './shaderPack41';
+import { shaderPack42 } from './shaderPack42';
+import { shaderPack43 } from './shaderPack43';
 
 export interface DitherShaderDef {
   id: string;
